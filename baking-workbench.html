@@ -758,18 +758,22 @@ body {
 }
 
 .recipe-card-actions button {
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   border: none;
   background: transparent;
   color: var(--text-muted);
-  font-size: 14px;
+  font-size: 17px;
+  line-height: 1;
   cursor: pointer;
   transition: var(--transition);
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
+  -webkit-appearance: none;
 }
 
 .recipe-card-actions button:hover {
@@ -1551,12 +1555,12 @@ body {
         </div>
       </div>
       <div class="nav-actions">
-        <button class="nav-btn" onclick="togglePanel('favorites')" title="收藏">⭐</button>
-        <button class="nav-btn" onclick="togglePanel('shopping')" title="采购清单">🛒</button>
-        <button class="nav-btn" onclick="togglePanel('inventory')" title="原料库存">📦</button>
-        <button class="nav-btn" id="themeToggle" onclick="toggleTheme()" title="切换模式">🌙</button>
-        <button class="nav-btn" onclick="openIconPicker()" title="更换图标">🖼</button>
-        <button class="nav-btn" id="syncBtn" onclick="toggleSyncPanel()" title="云端同步">☁️</button>
+        <button class="nav-btn" onclick="togglePanel('favorites')" aria-label="收藏">⭐</button>
+        <button class="nav-btn" onclick="togglePanel('shopping')" aria-label="采购清单">🛒</button>
+        <button class="nav-btn" onclick="togglePanel('inventory')" aria-label="原料库存">📦</button>
+        <button class="nav-btn" id="themeToggle" onclick="toggleTheme()" aria-label="切换模式">🌙</button>
+        <button class="nav-btn" onclick="openIconPicker()" aria-label="更换图标">🖼</button>
+        <button class="nav-btn" id="syncBtn" onclick="toggleSyncPanel()" aria-label="云端同步">☁️</button>
         <button class="nav-btn nav-btn-primary" onclick="openNewRecipeModal()" title="新建配方">＋ 新建</button>
       </div>
     </div>
@@ -2426,10 +2430,10 @@ function renderRecipeCard(r) {
       <div class="recipe-card-header">
         <span class="recipe-category-tag">${catEmojis[r.category] || '📌'} ${r.category}</span>
         <div class="recipe-card-actions" style="position:relative;">
-          <button class="${r.favorite ? 'fav-active' : ''}" onclick="toggleFavorite(${r.id})" title="收藏">${r.favorite ? '❤️' : '🤍'}</button>
-          <button onclick="openEditRecipeModal(${r.id})" title="编辑">✏️</button>
-          <button onclick="confirmDelete(${r.id})" title="删除">🗑</button>
-          <button onclick="toggleDropdown(event, ${r.id})" title="更多">⋯</button>
+          <button class="${r.favorite ? 'fav-active' : ''}" onclick="toggleFavorite(${r.id})" aria-label="收藏">${r.favorite ? '❤️' : '🤍'}</button>
+          <button onclick="openEditRecipeModal(${r.id})" aria-label="编辑">✏️</button>
+          <button onclick="confirmDelete(${r.id})" aria-label="删除">🗑</button>
+          <button onclick="toggleDropdown(event, ${r.id})" aria-label="更多">⋯</button>
         </div>
       </div>
 
