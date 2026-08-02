@@ -2439,10 +2439,10 @@ function renderRecipeCard(r) {
       <div class="recipe-card-header">
         <span class="recipe-category-tag">${catEmojis[r.category] || '📌'} ${r.category}</span>
         <div class="recipe-card-actions" style="position:relative;">
-          <button class="${r.favorite ? 'fav-active' : ''}" onclick="toggleFavorite(${r.id})" title="收藏">${r.favorite ? '❤️' : '🤍'}</button>
-          <button onclick="openEditRecipeModal(${r.id})" title="编辑">✏️</button>
-          <button onclick="confirmDelete(${r.id})" title="删除">🗑</button>
-          <button onclick="toggleDropdown(event, ${r.id})" title="更多">⋯</button>
+          <button class="${r.favorite ? 'fav-active' : ''}" onclick="toggleFavorite(${r.id})" aria-label="收藏">${r.favorite ? '❤️' : '🤍'}</button>
+          <button onclick="openEditRecipeModal(${r.id})" aria-label="编辑">✏️</button>
+          <button onclick="confirmDelete(${r.id})" aria-label="删除">🗑</button>
+          <button onclick="toggleDropdown(event, ${r.id})" aria-label="更多">⋯</button>
         </div>
       </div>
 
