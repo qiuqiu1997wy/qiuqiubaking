@@ -1,0 +1,3889 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>烘焙工作台 v4</title>
+
+<!-- PWA / Web App Manifest -->
+<link rel="manifest" href="baking-workbench-manifest.json">
+
+<!-- iOS Safari 主屏幕图标 -->
+<link rel="apple-touch-icon" href="app-icon.jpg">
+<link rel="apple-touch-icon" sizes="180x180" href="app-icon.jpg">
+<link rel="icon" type="image/jpeg" sizes="192x192" href="app-icon-192.jpg">
+<link rel="icon" type="image/jpeg" sizes="512x512" href="app-icon-512.jpg">
+
+<!-- iOS 状态栏样式 -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="烘焙工作台">
+
+<!-- Android Chrome -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#FFF8F0">
+
+<!-- 微软磁贴 -->
+<meta name="msapplication-TileImage" content="icon-180.png">
+<meta name="msapplication-TileColor" content="#FFF8F0">
+<style>
+:root {
+  --bg: #FFF8F0;
+  --bg-secondary: #FFFBF7;
+  --surface: #FFFFFF;
+  --text: #4A3728;
+  --text-secondary: #8B7355;
+  --text-muted: #B8A899;
+  --primary: #8B6914;
+  --primary-hover: #6B4F0E;
+  --primary-light: #F5E6CC;
+  --accent-pink: #F2A0A0;
+  --accent-pink-light: #FDE8E8;
+  --accent-mint: #8EC5B8;
+  --accent-mint-light: #E8F5F1;
+  --border: #E8DCC8;
+  --border-light: #F0E8D8;
+  --shadow: 0 2px 12px rgba(139, 105, 20, 0.08);
+  --shadow-sm: 0 1px 4px rgba(139, 105, 20, 0.06);
+  --shadow-md: 0 4px 20px rgba(139, 105, 20, 0.12);
+  --radius: 14px;
+  --radius-sm: 10px;
+  --radius-xs: 8px;
+  --radius-lg: 20px;
+  --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --font-size: 15px;
+  --star-color: #E8A850;
+  --danger: #D4756B;
+  --danger-light: #FDEAEA;
+  --success: #7BA587;
+  --success-light: #EDF5EF;
+}
+
+[data-theme="dark"] {
+  --bg: #2C2418;
+  --bg-secondary: #332B1F;
+  --surface: #3D3326;
+  --text: #E8DCC8;
+  --text-secondary: #C4B59A;
+  --text-muted: #8B7B65;
+  --primary: #C9A03A;
+  --primary-hover: #D4B04E;
+  --primary-light: #3D3326;
+  --accent-pink: #E88282;
+  --accent-pink-light: #3D2828;
+  --accent-mint: #6EA89A;
+  --accent-mint-light: #283836;
+  --border: #4A3D2E;
+  --border-light: #3D3326;
+  --shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.4);
+  --danger: #D4756B;
+  --danger-light: #3D2828;
+  --success: #7BA587;
+  --success-light: #283836;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'PingFang SC', 'Noto Sans SC', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: var(--font-size);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  height: 100dvh;
+  width: 100vw;
+
+/* ========== 开机动画 ========== */
+.splash-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #FFF8F0;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 1;
+  transform: scale(1);
+}
+
+.splash-screen.hidden {
+  opacity: 0;
+  transform: scale(1.04);
+  pointer-events: none;
+}
+
+.splash-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 40px 32px;
+  max-width: 360px;
+  width: 100%;
+}
+
+.splash-date {
+  font-size: 13px;
+  color: #B8A899;
+  margin-bottom: 24px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+.splash-hero {
+  width: 200px;
+  height: 200px;
+  margin-bottom: 28px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #FFF8F0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  will-change: transform;
+  animation: splashFloat 3s ease-in-out infinite;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+}
+
+@keyframes splashFloat {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -6px, 0); }
+}
+
+.splash-hero-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+.splash-motto {
+  font-size: 22px;
+  font-weight: 700;
+  color: #6B4F0E;
+  margin-bottom: 10px;
+  letter-spacing: 1px;
+  min-width: 60px;
+  outline: none;
+  border-radius: 4px;
+  padding: 2px 8px;
+  transition: background 0.2s;
+}
+
+.splash-motto:focus {
+  background: rgba(139, 105, 20, 0.06);
+}
+
+.splash-greeting {
+  font-size: 15px;
+  color: #8B7355;
+  margin-bottom: 6px;
+  font-weight: 500;
+  outline: none;
+  border-radius: 4px;
+  padding: 2px 8px;
+  transition: background 0.2s;
+}
+
+.splash-greeting:focus {
+  background: rgba(139, 105, 20, 0.06);
+}
+
+.splash-subtitle {
+  font-size: 13px;
+  color: #B8A899;
+  margin-bottom: 32px;
+  outline: none;
+  border-radius: 4px;
+  padding: 2px 8px;
+  transition: background 0.2s;
+}
+
+.splash-subtitle:focus {
+  background: rgba(139, 105, 20, 0.06);
+}
+
+.splash-btn {
+  padding: 14px 48px;
+  background: #8B6914;
+  color: #FFF;
+  border: none;
+  border-radius: 28px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 16px rgba(139, 105, 20, 0.25);
+  letter-spacing: 1px;
+}
+
+.splash-btn:active {
+  transform: scale(0.96);
+  box-shadow: 0 2px 8px rgba(139, 105, 20, 0.2);
+  background: #6B4F0E;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  max-width: 430px;
+  margin: 0 auto;
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+}
+
+/* ========== 顶部导航栏 ========== */
+.top-nav {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border-light);
+  padding: 8px 12px;
+  flex-shrink: 0;
+  z-index: 100;
+  box-shadow: var(--shadow-sm);
+}
+
+.nav-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.logo-area {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.logo-icon {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, var(--primary), #A07818);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFF;
+  font-size: 20px;
+  box-shadow: 0 2px 6px rgba(139, 105, 20, 0.2);
+  flex-shrink: 0;
+}
+
+.logo-text h1 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.logo-text span {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-weight: 400;
+  display: block;
+  white-space: nowrap;
+}
+
+.search-box {
+  flex: 1;
+  position: relative;
+  min-width: 0;
+}
+
+.search-box input {
+  width: 100%;
+  height: 34px;
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  padding: 0 14px 0 34px;
+  font-size: 13px;
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+  transition: var(--transition);
+}
+
+.search-box input:focus {
+  border-color: var(--primary);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px rgba(139, 105, 20, 0.08);
+}
+
+.search-box .search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.search-row {
+  margin-bottom: 8px;
+}
+
+.search-row .search-box {
+  max-width: 100%;
+  width: 100%;
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.nav-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--border-light);
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.nav-btn:hover, .nav-btn:active {
+  background: var(--primary-light);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.nav-btn-primary {
+  background: var(--primary);
+  color: #FFF;
+  border: none;
+  font-weight: 600;
+  font-size: 11px;
+  padding: 0 8px;
+  border-radius: 16px;
+  width: auto;
+  gap: 2px;
+  white-space: nowrap;
+  height: 28px;
+}
+
+.nav-btn-primary:hover, .nav-btn-primary:active {
+  background: var(--primary-hover);
+  color: #FFF;
+}
+
+/* 垃圾桶按钮角标 */
+#trashBtn[data-count]::after {
+  content: attr(data-count);
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  background: var(--danger);
+  color: #FFF;
+  font-size: 9px;
+  font-weight: 700;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-btn .icon-text { font-size: 11px; }
+
+/* ========== 主内容区 ========== */
+.main-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ========== 侧边栏容器 ========== */
+.sidebar-wrapper {
+  width: 112px;
+  min-width: 112px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ========== 侧边栏 ========== */
+.sidebar {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  background: var(--surface);
+  border-right: 1px solid var(--border-light);
+}
+
+/* 侧边栏底部固定区域（垃圾桶） */
+.sidebar-footer {
+  flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border-light);
+  border-top: 1px solid var(--border-light);
+  padding: 6px 6px 8px;
+}
+
+.sidebar-section {
+  padding: 0 4px;
+}
+
+.sidebar-section-title {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 8px 8px 4px;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 8px;
+  border-radius: var(--radius-xs);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition);
+  position: relative;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.sidebar-item:hover {
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+.sidebar-item.active {
+  background: var(--primary-light);
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.sidebar-item .count {
+  margin-left: auto;
+  font-size: 10px;
+  background: var(--border-light);
+  color: var(--text-muted);
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.sidebar-item.active .count {
+  background: var(--primary);
+  color: #FFF;
+}
+
+.sidebar-item .emoji {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.sidebar-add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px;
+  margin: 2px 6px;
+  border-radius: var(--radius-xs);
+  border: 1px dashed var(--border);
+  font-size: 11px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: var(--transition);
+  background: transparent;
+}
+
+.sidebar-add-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-light);
+}
+
+.sidebar-divider {
+  height: 1px;
+  background: var(--border-light);
+  margin: 6px 8px;
+}
+
+.tag-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: var(--transition);
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid transparent;
+}
+
+.tag-item:hover {
+  background: var(--accent-pink-light);
+  color: var(--accent-pink);
+}
+
+.tag-item.active {
+  background: var(--accent-pink-light);
+  color: var(--accent-pink);
+  border-color: var(--accent-pink);
+  font-weight: 600;
+}
+
+/* ========== 右侧主内容区 ========== */
+.content-area {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 80px;
+}
+
+/* 筛选区域 */
+.filter-section {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 12px;
+  box-shadow: var(--shadow-sm);
+}
+
+.filter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.filter-header h2 {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.filter-stats {
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--bg);
+  padding: 3px 10px;
+  border-radius: 10px;
+}
+
+.ingredient-search {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+  align-items: center;
+}
+
+.ingredient-search input {
+  flex: 1;
+  height: 32px;
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  padding: 0 12px;
+  font-size: 12px;
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+}
+
+.ingredient-search input:focus {
+  border-color: var(--accent-mint);
+  box-shadow: 0 0 0 3px rgba(142, 197, 184, 0.12);
+}
+
+.ingredient-search .btn-sm {
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 15px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.btn-search {
+  background: var(--accent-mint) !important;
+  color: #FFF !important;
+  border: none !important;
+}
+
+.btn-search:hover {
+  opacity: 0.9;
+}
+
+.btn-clear {
+  color: var(--text-secondary);
+}
+
+.btn-clear:hover {
+  background: var(--danger-light);
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+/* 快捷标签条 */
+.quick-tags {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 2px 0;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  align-items: center;
+}
+
+.quick-tags::-webkit-scrollbar { display: none; }
+
+.quick-tag {
+  flex-shrink: 0;
+  padding: 4px 12px;
+  border-radius: 14px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  background: var(--bg);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-light);
+}
+
+.quick-tag.active {
+  background: var(--accent-pink-light);
+  color: var(--accent-pink);
+  border-color: var(--accent-pink);
+  font-weight: 600;
+}
+
+.quick-tag:hover {
+  background: var(--accent-pink-light);
+}
+
+.btn-clear-tags {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: 14px;
+  font-size: 10px;
+  cursor: pointer;
+  border: 1px dashed var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  transition: var(--transition);
+}
+
+.btn-clear-tags:hover {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+/* 配方卡片 */
+.recipe-card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  box-shadow: var(--shadow);
+  transition: var(--transition);
+  border: 1px solid var(--border-light);
+  position: relative;
+}
+
+.recipe-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.recipe-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.recipe-category-tag {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 10px;
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+.recipe-card-actions {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+}
+
+.recipe-card-actions button {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 14px;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.recipe-card-actions button:hover {
+  background: var(--bg);
+  color: var(--primary);
+}
+
+.recipe-card-actions button.fav-active {
+  color: #E88282;
+}
+
+.recipe-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.recipe-stars {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 8px;
+}
+
+.recipe-stars span {
+  font-size: 13px;
+  color: var(--star-color);
+  cursor: pointer;
+}
+
+.recipe-stars span.empty {
+  color: var(--border-light);
+}
+
+/* 工艺参数胶囊 */
+.recipe-params {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.param-capsule {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  background: var(--bg);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-light);
+}
+
+.param-capsule.temp { background: #FEF3E4; color: #C97D30; border-color: #F5D5A8; }
+.param-capsule.time { background: #F0F7F5; color: #5A8F7A; border-color: #C5E0D5; }
+.param-capsule.storage { background: #F5F0FB; color: #7B6BA3; border-color: #DDD0F0; }
+
+[data-theme="dark"] .param-capsule.temp { background: #3D2E1E; color: #D4A050; border-color: #5A3E20; }
+[data-theme="dark"] .param-capsule.time { background: #283836; color: #7BA587; border-color: #3D5A4E; }
+[data-theme="dark"] .param-capsule.storage { background: #2E2A3D; color: #A090C8; border-color: #4A3E5E; }
+
+/* 消息提示条 */
+.recipe-note {
+  background: var(--accent-mint-light);
+  border-radius: var(--radius-xs);
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-left: 3px solid var(--accent-mint);
+}
+
+.recipe-note .note-icon { font-size: 14px; }
+.recipe-note input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 12px;
+  color: var(--text-secondary);
+  outline: none;
+  font-family: inherit;
+}
+
+/* 倍率换算 */
+.scale-section {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  flex-wrap: wrap;
+}
+
+.scale-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.scale-btn {
+  padding: 4px 10px;
+  border-radius: 12px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  color: var(--text-secondary);
+}
+
+.scale-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.scale-btn.active {
+  background: var(--primary);
+  color: #FFF;
+  border-color: var(--primary);
+}
+
+.scale-custom {
+  width: 50px;
+  height: 28px;
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+}
+
+.scale-custom:focus {
+  border-color: var(--primary);
+}
+
+.btn-reset {
+  padding: 4px 10px;
+  border-radius: 12px;
+  border: 1px dashed var(--border);
+  background: transparent;
+  font-size: 10px;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: var(--transition);
+}
+
+.btn-reset:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+/* 配料清单 */
+.ingredients-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.ingredient-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border-radius: var(--radius-xs);
+  background: var(--bg);
+  font-size: 13px;
+  transition: var(--transition);
+}
+
+.ingredient-row:hover {
+  background: var(--border-light);
+}
+
+.ingredient-name {
+  font-weight: 500;
+  color: var(--text);
+}
+
+.ingredient-amount {
+  font-weight: 600;
+  color: var(--primary);
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 8px;
+  transition: var(--transition);
+}
+
+.ingredient-amount:hover {
+  background: var(--primary-light);
+}
+
+.ingredient-amount input {
+  width: 50px;
+  text-align: center;
+  border: 1px solid var(--primary);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary);
+  background: var(--surface);
+  padding: 2px 4px;
+  outline: none;
+}
+
+.btn-copy {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: var(--transition);
+  width: fit-content;
+}
+
+.btn-copy:hover {
+  background: var(--accent-mint-light);
+  border-color: var(--accent-mint);
+  color: var(--accent-mint);
+}
+
+/* 空状态 */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+}
+
+.empty-state .empty-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+.empty-state p {
+  font-size: 14px;
+}
+
+/* 浮动计时按钮 */
+.float-timer-btn {
+  position: fixed;
+  bottom: 24px;
+  right: calc((100vw - 430px) / 2 + 16px);
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-mint), #6BA89A);
+  color: #FFF;
+  border: none;
+  font-size: 22px;
+  cursor: grab;
+  box-shadow: 0 4px 16px rgba(142, 197, 184, 0.4);
+  z-index: 200;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.float-timer-btn:active {
+  cursor: grabbing;
+}
+
+.float-timer-btn.dragging {
+  transform: scale(1.12);
+  box-shadow: 0 8px 28px rgba(142, 197, 184, 0.55);
+  transition: none;
+}
+
+@media (max-width: 430px) {
+  .float-timer-btn { right: 16px; }
+}
+
+/* ========== 弹窗/模态框 ========== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+
+.modal {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  width: 88%;
+  max-width: 360px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-md);
+  animation: slideUp 0.25s ease;
+}
+
+.modal h3 {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.modal .form-group {
+  margin-bottom: 8px;
+}
+
+.modal .form-group label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 3px;
+}
+
+.modal .form-group input,
+.modal .form-group select,
+.modal .form-group textarea {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-xs);
+  font-size: 12px;
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+  font-family: inherit;
+}
+
+.modal .form-group textarea {
+  resize: vertical;
+  min-height: 48px;
+}
+
+.modal-actions {
+  margin-top: 10px;
+}
+
+.btn {
+  padding: 6px 16px;
+  font-size: 12px;
+}
+  color: var(--text);
+  margin-bottom: 16px;
+}
+
+.modal .form-group input:focus,
+.modal .form-group select:focus,
+.modal .form-group textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(139, 105, 20, 0.08);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.btn {
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: var(--transition);
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: #FFF;
+}
+
+.btn-primary:hover { background: var(--primary-hover); }
+
+.btn-secondary {
+  background: var(--bg);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:hover { background: var(--border-light); }
+
+.btn-danger {
+  background: var(--danger);
+  color: #FFF;
+}
+
+.btn-danger:hover { opacity: 0.9; }
+
+/* 配料输入行 */
+.ingredient-input-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.ingredient-input-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.ingredient-input-row .btn-remove-ing {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: var(--danger-light);
+  color: var(--danger);
+  font-size: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.btn-add-ing {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 12px;
+  border: 1px dashed var(--border);
+  background: transparent;
+  font-size: 11px;
+  color: var(--text-muted);
+  cursor: pointer;
+  margin-top: 4px;
+}
+
+.btn-add-ing:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* 计时器弹窗 */
+.timer-display {
+  text-align: center;
+  padding: 20px;
+}
+
+.timer-display .time {
+  font-size: 56px;
+  font-weight: 300;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 2px;
+  margin: 16px 0;
+}
+
+.timer-controls {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.timer-presets {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.timer-preset {
+  padding: 6px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  color: var(--text-secondary);
+}
+
+.timer-preset:hover {
+  border-color: var(--accent-mint);
+  color: var(--accent-mint);
+  background: var(--accent-mint-light);
+}
+
+/* 采购清单 & 库存管理面板 */
+.panel-slide {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 90%;
+  max-width: 400px;
+  height: 100vh;
+  background: var(--surface);
+  z-index: 600;
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-slide.open {
+  transform: translateX(0);
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.panel-header h3 {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.panel-close {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background: var(--bg);
+  font-size: 16px;
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+
+.panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+/* 购物清单条目 */
+.shopping-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--bg);
+  border-radius: var(--radius-xs);
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+.shopping-item input[type="checkbox"] {
+  accent-color: var(--accent-mint);
+}
+
+.shopping-item .item-name {
+  flex: 1;
+  font-weight: 500;
+}
+
+.shopping-item .item-qty {
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 12px;
+}
+
+/* 库存表格 */
+.inventory-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.inventory-table th {
+  text-align: left;
+  padding: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.inventory-table td {
+  padding: 8px;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-secondary);
+}
+
+.inventory-table td input {
+  width: 60px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 12px;
+  text-align: center;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.low-stock {
+  color: var(--danger) !important;
+  font-weight: 600;
+}
+
+/* 下拉菜单 */
+.dropdown-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: var(--surface);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-light);
+  min-width: 120px;
+  z-index: 300;
+  padding: 4px;
+  animation: fadeIn 0.15s ease;
+}
+
+.dropdown-menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.dropdown-menu button:hover {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.dropdown-menu button.danger {
+  color: var(--danger);
+}
+
+.dropdown-menu button.danger:hover {
+  background: var(--danger-light);
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text);
+  color: var(--surface);
+  padding: 10px 24px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  z-index: 9999;
+  animation: toastIn 0.3s ease, toastOut 0.3s ease 1.8s forwards;
+  box-shadow: var(--shadow-md);
+}
+
+/* 动画 */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(-10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+@keyframes toastOut { from { opacity: 1; } to { opacity: 0; } }
+
+/* 移动端滚动条 */
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* 字体大小类 */
+.font-sm { --font-size: 13px; }
+.font-md { --font-size: 15px; }
+.font-lg { --font-size: 17px; }
+
+/* ========== 图标选择器 ========== */
+.icon-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding: 4px;
+}
+
+.icon-option {
+  aspect-ratio: 1;
+  border-radius: var(--radius);
+  border: 2.5px solid var(--border-light);
+  cursor: pointer;
+  transition: var(--transition);
+  overflow: hidden;
+  position: relative;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-option:hover {
+  border-color: var(--primary);
+  box-shadow: var(--shadow-md);
+  transform: scale(1.03);
+}
+
+.icon-option.selected {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(139, 105, 20, 0.2);
+}
+
+.icon-option.selected::after {
+  content: '✓';
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #FFF;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-option img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.icon-option .icon-emoji {
+  font-size: 48px;
+  pointer-events: none;
+}
+
+/* Logo 区域适配自定义图标 */
+.logo-icon-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  object-fit: cover;
+  box-shadow: 0 2px 8px rgba(139, 105, 20, 0.25);
+}
+</style>
+</head>
+<body>
+<div class="app-container" id="app">
+  <!-- 顶部导航栏 -->
+  <nav class="top-nav">
+    <div class="nav-header">
+      <div class="logo-area">
+        <img src="icon-180.png" class="logo-icon-img" id="logoIcon" alt="logo">
+        <div class="logo-text">
+          <h1 id="appTitle">烘焙工作台</h1>
+          <span>配方・步骤・计时</span>
+        </div>
+      </div>
+      <div class="nav-actions">
+        <button class="nav-btn" onclick="togglePanel('favorites')" title="收藏">⭐</button>
+        <button class="nav-btn" onclick="togglePanel('shopping')" title="采购清单">🛒</button>
+        <button class="nav-btn" onclick="togglePanel('inventory')" title="原料库存">📦</button>
+        <button class="nav-btn" id="themeToggle" onclick="toggleTheme()" title="切换模式">🌙</button>
+        <button class="nav-btn" onclick="openIconPicker()" title="更换图标">🖼</button>
+        <button class="nav-btn" id="syncBtn" onclick="toggleSyncPanel()" title="云端同步">☁️</button>
+        <button class="nav-btn nav-btn-primary" onclick="openNewRecipeModal()" title="新建配方">＋ 新建</button>
+      </div>
+    </div>
+    <div class="search-row" style="margin-top:8px;">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="globalSearch" placeholder="搜索配方、食材、步骤..." oninput="performSearch()">
+      </div>
+    </div>
+  </nav>
+
+  <!-- 主内容区 -->
+  <div class="main-body">
+    <!-- 左侧侧边栏容器 -->
+    <div class="sidebar-wrapper">
+      <aside class="sidebar" id="sidebar">
+        <div id="categoryList"></div>
+        <button class="sidebar-add-btn" onclick="addCustomCategory()">＋ 新建分类</button>
+        <div class="sidebar-divider"></div>
+        <div id="tagList" style="display:flex;flex-direction:column;gap:2px;padding:0 6px;"></div>
+        <button class="sidebar-add-btn" onclick="addCustomTag()">＋ 新建标签</button>
+      </aside>
+      <!-- 垃圾桶：固定在底部，永不滚动 -->
+      <div class="sidebar-footer">
+        <div class="sidebar-item" onclick="toggleTrashPanel()" style="display:flex;align-items:center;justify-content:center;gap:4px;padding:6px 4px;font-size:16px;color:var(--text-muted);cursor:pointer;border-radius:var(--radius-xs);">
+          <span>🗑️</span>
+          <span id="trashBadge" style="font-size:9px;background:var(--danger);color:#fff;border-radius:10px;padding:0px 5px;display:none;">0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右侧主内容区 -->
+    <main class="content-area" id="contentArea">
+      <!-- 筛选区域 -->
+      <div class="filter-section">
+        <div class="filter-header">
+          <h2 id="sectionTitle">全部配方</h2>
+          <span class="filter-stats" id="filterStats">共 0 个配方</span>
+        </div>
+        <div class="ingredient-search">
+          <input type="text" id="ingredientSearch" placeholder="🔍 输入原料反查配方（如：黄油）" oninput="searchByIngredient()">
+        </div>
+        <div class="quick-tags" id="quickTags"></div>
+      </div>
+
+      <!-- 配方卡片列表 -->
+      <div id="recipeList"></div>
+
+      <!-- 空状态 -->
+      <div class="empty-state" id="emptyState" style="display:none;">
+        <div class="empty-icon">🧁</div>
+        <p>还没有配方哦～<br>点击右上角「＋ 新建」开始创建吧！</p>
+      </div>
+    </main>
+  </div>
+
+  <!-- 浮动计时按钮 -->
+  <button class="float-timer-btn" id="floatTimerBtn" title="长按拖动 · 点击打开计时器">⏱</button>
+
+  <!-- Toast 容器 -->
+  <div id="toastContainer"></div>
+</div>
+
+<!-- ========== 模态框：新建/编辑配方 ========== -->
+<div class="modal-overlay" id="recipeModal" style="display:none;">
+  <div class="modal">
+    <h3 id="recipeModalTitle">新建配方</h3>
+    <div class="form-group">
+      <label>配方名称</label>
+      <input type="text" id="recipeName" placeholder="如：日式生吐司">
+    </div>
+    <div class="form-group">
+      <label>分类</label>
+      <select id="recipeCategory">
+        <option value="面包类">面包类</option>
+        <option value="甜品类">甜品类</option>
+        <option value="蛋糕类">蛋糕类</option>
+        <option value="饼干类">饼干类</option>
+        <option value="中式烘焙类">中式烘焙类</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>标签（多选，逗号分隔）</label>
+      <input type="text" id="recipeTags" placeholder="如：低糖, 冷藏">
+    </div>
+    <div class="form-group">
+      <label>星级评分</label>
+      <select id="recipeRating">
+        <option value="5">⭐⭐⭐⭐⭐</option>
+        <option value="4">⭐⭐⭐⭐</option>
+        <option value="3">⭐⭐⭐</option>
+        <option value="2">⭐⭐</option>
+        <option value="1">⭐</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>烘烤温度（上火/下火）</label>
+      <input type="text" id="recipeTemp" placeholder="如：上火180℃ / 下火200℃">
+    </div>
+    <div class="form-group">
+      <label>烘烤时长</label>
+      <input type="text" id="recipeTime" placeholder="如：25分钟">
+    </div>
+    <div class="form-group">
+      <label>储存条件</label>
+      <select id="recipeStorage">
+        <option value="常温">常温</option>
+        <option value="冷藏">冷藏</option>
+        <option value="冷冻">冷冻</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>操作提醒</label>
+      <input type="text" id="recipeNote" placeholder="如：功率大则时间短，注意观察上色">
+    </div>
+    <div class="form-group">
+      <label>配料清单</label>
+      <div id="ingredientInputs">
+        <div class="ingredient-input-row">
+          <input type="text" placeholder="原料名称" class="ing-name">
+          <input type="text" placeholder="用量" class="ing-amount" style="width:80px;">
+          <input type="text" placeholder="单位" class="ing-unit" style="width:60px;">
+        </div>
+      </div>
+      <button class="btn-add-ing" onclick="addIngredientInput()">＋ 添加配料</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeRecipeModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveRecipe()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 计时器弹窗 ========== -->
+<div class="modal-overlay" id="timerModal" style="display:none;">
+  <div class="modal" style="text-align:center;">
+    <h3>⏱ 烘焙计时器</h3>
+    <div class="timer-display">
+      <div class="time" id="timerDisplay">00:00</div>
+      <div class="timer-presets">
+        <button class="timer-preset" onclick="setTimerPreset(5)">5分钟</button>
+        <button class="timer-preset" onclick="setTimerPreset(10)">10分钟</button>
+        <button class="timer-preset" onclick="setTimerPreset(15)">15分钟</button>
+        <button class="timer-preset" onclick="setTimerPreset(20)">20分钟</button>
+        <button class="timer-preset" onclick="setTimerPreset(25)">25分钟</button>
+        <button class="timer-preset" onclick="setTimerPreset(30)">30分钟</button>
+        <button class="timer-preset" onclick="setTimerPreset(40)">40分钟</button>
+        <button class="timer-preset" onclick="setTimerPreset(60)">60分钟</button>
+      </div>
+      <div style="margin-bottom:10px;">
+        <input type="number" id="customTimerMinutes" placeholder="自定义分钟" style="width:100px;padding:6px 10px;border-radius:14px;border:1px solid var(--border);text-align:center;font-size:13px;">
+      </div>
+      <div class="timer-controls">
+        <button class="btn btn-primary" onclick="startTimer()" id="timerStartBtn">▶ 开始</button>
+        <button class="btn btn-secondary" onclick="pauseTimer()">⏸ 暂停</button>
+        <button class="btn btn-secondary" onclick="resetTimer()">↺ 复位</button>
+        <button class="btn btn-secondary" onclick="closeTimer()">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 收藏面板 ========== -->
+<div class="panel-slide" id="favoritesPanel">
+  <div class="panel-header">
+    <h3>⭐ 收藏配方</h3>
+    <button class="panel-close" onclick="togglePanel('favorites')">✕</button>
+  </div>
+  <div class="panel-body" id="favoritesContent"></div>
+</div>
+
+<!-- ========== 采购清单面板 ========== -->
+<div class="panel-slide" id="shoppingPanel">
+  <div class="panel-header">
+    <h3>🛒 采购清单</h3>
+    <button class="panel-close" onclick="togglePanel('shopping')">✕</button>
+  </div>
+  <div class="panel-body" id="shoppingContent">
+    <div class="form-group" style="margin-bottom:12px;">
+      <div style="display:flex;gap:6px;">
+        <input type="text" id="newShoppingItem" placeholder="添加采购物品" style="flex:1;">
+        <button class="btn btn-primary" onclick="addShoppingItem()" style="padding:6px 14px;font-size:12px;">添加</button>
+      </div>
+    </div>
+    <div id="shoppingList"></div>
+  </div>
+</div>
+
+<!-- ========== 库存面板 ========== -->
+<div class="panel-slide" id="inventoryPanel">
+  <div class="panel-header">
+    <h3>📦 原料库存</h3>
+    <button class="panel-close" onclick="togglePanel('inventory')">✕</button>
+  </div>
+  <div class="panel-body" id="inventoryContent">
+    <div class="form-group" style="margin-bottom:12px;">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <input type="text" id="newInvName" placeholder="原料名称" style="flex:1;min-width:80px;">
+        <input type="text" id="newInvQty" placeholder="数量" style="width:60px;">
+        <input type="text" id="newInvUnit" placeholder="单位" style="width:50px;">
+        <button class="btn btn-primary" onclick="addInventoryItem()" style="padding:6px 14px;font-size:12px;">添加</button>
+      </div>
+    </div>
+    <table class="inventory-table">
+      <thead><tr><th>原料</th><th>库存量</th><th>单位</th><th>操作</th></tr></thead>
+      <tbody id="inventoryTableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ========== 垃圾桶面板 ========== -->
+<div class="panel-slide" id="trashPanel">
+  <div class="panel-header">
+    <h3>🗑️ 垃圾桶</h3>
+    <button class="panel-close" onclick="toggleTrashPanel()">✕</button>
+  </div>
+  <div class="panel-body" id="trashContent">
+    <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">删除的配方会先放在这里，可以恢复或永久删除</p>
+    <div id="trashList"></div>
+    <div id="trashEmpty" style="text-align:center;color:var(--text-muted);padding:40px;">
+      <div style="font-size:40px;">📭</div>
+      <p>垃圾桶是空的</p>
+    </div>
+    <div style="margin-top:12px;text-align:right;" id="trashClearAll">
+      <button class="btn btn-danger" onclick="clearAllTrash()" style="font-size:11px;padding:6px 12px;">🗑️ 清空垃圾桶</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 图标选择弹窗 ========== -->
+<div class="modal-overlay" id="iconPickerModal" style="display:none;">
+  <div class="modal" style="text-align:center;">
+    <h3>🖼 更换应用图标</h3>
+    <p style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">从相册选择照片作为应用图标和导航栏 Logo</p>
+    <div style="margin-top:8px;">
+      <p style="font-size:11px;color:var(--text-muted);margin-bottom:12px;">📷 选择一张照片作为图标</p>
+      <input type="file" id="customIconInput" accept="image/*" style="display:none;" onchange="handleCustomIconUpload(event)">
+      <button class="btn btn-primary" onclick="document.getElementById('customIconInput').click()" style="font-size:14px;gap:6px;padding:12px 24px;">
+        📷 从相册选择照片
+      </button>
+    </div>
+    <div class="modal-actions" style="justify-content:center;margin-top:16px;">
+      <button class="btn btn-secondary" onclick="closeIconPicker()">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 确认删除弹窗 ========== -->
+<div class="modal-overlay" id="confirmModal" style="display:none;">
+  <div class="modal" style="text-align:center;">
+    <h3>⚠️ 确认删除</h3>
+    <p id="confirmMsg" style="font-size:14px;color:var(--text-secondary);margin:12px 0;">确定要删除这个配方吗？此操作不可恢复。</p>
+    <div class="modal-actions" style="justify-content:center;">
+      <button class="btn btn-secondary" onclick="closeConfirm()">取消</button>
+      <button class="btn btn-danger" id="confirmDeleteBtn">删除</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 云端同步面板 ========== -->
+<div class="panel-slide" id="syncPanel">
+  <div class="panel-header">
+    <h3>☁️ 云端同步</h3>
+    <button class="panel-close" onclick="toggleSyncPanel()">✕</button>
+  </div>
+  <div class="panel-body">
+    <div style="background:var(--primary-light);border-radius:var(--radius-sm);padding:12px;margin-bottom:16px;font-size:12px;color:var(--text-secondary);line-height:1.6;">
+      💡 <b>云端同步说明：</b><br>
+      设置一个同步密钥（密码），所有设备用同一个密钥即可同步数据。数据加密存储，安全可靠。
+    </div>
+
+    <div class="form-group">
+      <label style="font-size:13px;font-weight:600;color:var(--text);">🔑 同步密钥</label>
+      <div style="display:flex;gap:6px;margin-top:4px;">
+        <input type="password" id="syncKeyInput" placeholder="设置一个密钥（如：bakery2024）" style="flex:1;font-size:13px;" value="">
+        <button class="btn btn-secondary" onclick="toggleSyncKeyVisibility()" style="padding:6px 10px;font-size:12px;" id="togglePwdBtn">👁</button>
+      </div>
+      <p style="font-size:11px;color:var(--text-muted);margin-top:4px;">所有设备使用相同密钥即可同步</p>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button class="btn btn-primary" id="syncUploadBtn" onclick="doSyncUpload()" style="flex:1;">📤 上传到云端</button>
+      <button class="btn btn-secondary" id="syncDownloadBtn" onclick="doSyncDownload()" style="flex:1;">📥 从云端下载</button>
+    </div>
+
+    <div style="margin-top:12px;text-align:center;font-size:12px;color:var(--text-muted);" id="syncStatus">
+      <span id="syncStatusText">⚠️ 请先设置同步密钥</span>
+      <span id="syncTimeText"></span>
+    </div>
+
+    <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border-light);">
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+        <input type="checkbox" id="autoSyncToggle" onchange="toggleAutoSync(this.checked)" ${state.syncEnabled ? 'checked' : ''}>
+        修改后自动上传同步
+      </label>
+    </div>
+
+    <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border-light);">
+      <p style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">📋 手动输入云端 ID（用于在其他设备上连接）</p>
+      <div style="display:flex;gap:6px;">
+        <input type="text" id="syncBinIdInput" placeholder="粘贴云端 ID..." style="flex:1;font-size:12px;">
+        <button class="btn btn-secondary" onclick="setBinId()" style="font-size:11px;padding:6px 8px;">设置</button>
+      </div>
+      <button class="btn btn-secondary" style="margin-top:8px;font-size:11px;width:100%;" onclick="copyBinId()">📋 复制当前云端 ID（发给其他设备）</button>
+    </div>
+
+    <div style="margin-top:16px;padding-top:12px;border-top:2px solid var(--border);">
+      <p style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px;">📂 导出/导入（最可靠）</p>
+      <p style="font-size:11px;color:var(--text-muted);margin-bottom:12px;">通过微信或 AirDrop 传输数据文件</p>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-primary" onclick="exportAllData()" style="flex:1;font-size:13px;">📤 导出数据</button>
+        <button class="btn btn-secondary" onclick="document.getElementById('importFileInput').click()" style="flex:1;font-size:13px;">📥 导入数据</button>
+        <input type="file" id="importFileInput" accept=".json" style="display:none;" onchange="importAllData(event)">
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ========== 数据模型 ==========
+const DEFAULT_RECIPES = [
+  {
+    id: 1, name: '日式生吐司', category: '面包类', tags: ['低糖', '开酥'], rating: 5,
+    temp: '上火180℃ / 下火200℃', time: '25分钟', storage: '常温',
+    note: '功率大则时间短，注意观察上色',
+    ingredients: [
+      { name: '高筋面粉', amount: 250, unit: 'g' },
+      { name: '细砂糖', amount: 20, unit: 'g' },
+      { name: '盐', amount: 5, unit: 'g' },
+      { name: '酵母', amount: 3, unit: 'g' },
+      { name: '牛奶', amount: 180, unit: 'ml' },
+      { name: '黄油', amount: 25, unit: 'g' }
+    ],
+    scale: 1, favorite: true
+  },
+  {
+    id: 2, name: '原味戚风蛋糕', category: '蛋糕类', tags: ['戚风', '常温'], rating: 4,
+    temp: '上下火160℃', time: '40分钟', storage: '常温',
+    note: '蛋白打发至硬性发泡，翻拌要轻柔',
+    ingredients: [
+      { name: '低筋面粉', amount: 85, unit: 'g' },
+      { name: '鸡蛋', amount: 5, unit: '个' },
+      { name: '细砂糖', amount: 80, unit: 'g' },
+      { name: '玉米油', amount: 40, unit: 'ml' },
+      { name: '牛奶', amount: 40, unit: 'ml' }
+    ],
+    scale: 1, favorite: true
+  },
+  {
+    id: 3, name: '蔓越莓曲奇', category: '饼干类', tags: ['低糖', '常温'], rating: 4,
+    temp: '上火170℃ / 下火160℃', time: '15分钟', storage: '常温',
+    note: '面团冷藏30分钟再切片，形状更整齐',
+    ingredients: [
+      { name: '低筋面粉', amount: 200, unit: 'g' },
+      { name: '黄油', amount: 120, unit: 'g' },
+      { name: '糖粉', amount: 60, unit: 'g' },
+      { name: '蔓越莓干', amount: 50, unit: 'g' },
+      { name: '鸡蛋', amount: 1, unit: '个' }
+    ],
+    scale: 1, favorite: false
+  },
+  {
+    id: 4, name: '提拉米苏', category: '甜品类', tags: ['冷藏', '无水'], rating: 5,
+    temp: '无需烘烤', time: '冷藏4小时', storage: '冷藏',
+    note: '马斯卡彭提前室温回温，咖啡液要完全冷却',
+    ingredients: [
+      { name: '马斯卡彭芝士', amount: 250, unit: 'g' },
+      { name: '淡奶油', amount: 150, unit: 'ml' },
+      { name: '细砂糖', amount: 60, unit: 'g' },
+      { name: '手指饼干', amount: 200, unit: 'g' },
+      { name: '浓缩咖啡', amount: 100, unit: 'ml' },
+      { name: '可可粉', amount: 15, unit: 'g' }
+    ],
+    scale: 1, favorite: true
+  },
+  {
+    id: 5, name: '蛋黄酥', category: '中式烘焙类', tags: ['开酥', '节气限定'], rating: 5,
+    temp: '上火190℃ / 下火180℃', time: '30分钟', storage: '常温',
+    note: '油皮和油酥软硬度要一致，擀卷动作要轻',
+    ingredients: [
+      { name: '中筋面粉', amount: 200, unit: 'g' },
+      { name: '猪油', amount: 70, unit: 'g' },
+      { name: '细砂糖', amount: 20, unit: 'g' },
+      { name: '咸蛋黄', amount: 12, unit: '个' },
+      { name: '红豆沙', amount: 300, unit: 'g' },
+      { name: '水', amount: 80, unit: 'ml' }
+    ],
+    scale: 1, favorite: false
+  },
+  {
+    id: 6, name: '全麦欧包', category: '面包类', tags: ['低糖', '无水'], rating: 3,
+    temp: '上下火220℃', time: '30分钟', storage: '常温',
+    note: '蒸汽烘烤效果更佳，表面喷水可替代',
+    ingredients: [
+      { name: '全麦面粉', amount: 300, unit: 'g' },
+      { name: '高筋面粉', amount: 100, unit: 'g' },
+      { name: '酵母', amount: 4, unit: 'g' },
+      { name: '盐', amount: 6, unit: 'g' },
+      { name: '水', amount: 280, unit: 'ml' }
+    ],
+    scale: 1, favorite: false
+  }
+];
+
+const PRESET_TAGS = ['低糖', '无水'];
+const DEFAULT_CATEGORIES = ['全部配方', '面包类', '甜品类', '蛋糕类', '饼干类', '中式烘焙类'];
+
+// ========== 应用状态 ==========
+let state = {
+  recipes: [],
+  customCategories: [],
+  customTags: [],
+  activeCategory: '全部配方',
+  activeTags: [],
+  ingredientFilter: '',
+  searchQuery: '',
+  editingRecipeId: null,
+  fontLevel: 1, // 0=sm, 1=md, 2=lg
+  theme: 'light',
+  timerSeconds: 0,
+  timerInterval: null,
+  timerRunning: false,
+  shoppingItems: [],
+  inventoryItems: [],
+  pendingDeleteId: null,
+  appIcon: 'baker-girl', // 默认图标标识
+  appTitle: '烘焙工作台',
+  syncKey: '', // 云端同步密钥
+  syncEnabled: false,
+  lastSyncTime: 0,
+  trashRecipes: [] // 垃圾桶中的配方
+};
+
+// ========== 云端同步 (JSONBlob.com) ==========
+const SYNC_BIN_ID_KEY = 'baking_sync_bin_id';
+const SYNC_API_BASE = 'https://jsonblob.com/api/jsonBlob';
+
+// 生成本地同步 ID
+function getDeviceId() {
+  let id = localStorage.getItem('baking_device_id');
+  if (!id) {
+    id = 'dev_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 6);
+    localStorage.setItem('baking_device_id', id);
+  }
+  return id;
+}
+
+// 简单加密：密码 + 数据拼接后 base64（兼容性好，无需 crypto API）
+function simpleEncrypt(data, password) {
+  const payload = JSON.stringify(data);
+  const combined = password + ':' + payload;
+  return btoa(unescape(encodeURIComponent(combined)));
+}
+
+function simpleDecrypt(encryptedStr, password) {
+  try {
+    const combined = decodeURIComponent(escape(atob(encryptedStr)));
+    const parts = combined.split(':');
+    if (parts[0] !== password) return null;
+    return JSON.parse(parts.slice(1).join(':'));
+  } catch(e) {
+    return null;
+  }
+}
+
+// 上传数据到云端
+async function uploadToCloud() {
+  if (!state.syncKey) return { success: false, error: '未设置同步密钥' };
+  
+  const data = {
+    recipes: state.recipes,
+    customCategories: state.customCategories,
+    customTags: state.customTags,
+    shoppingItems: state.shoppingItems,
+    inventoryItems: state.inventoryItems,
+    appIcon: state.appIcon,
+    appTitle: state.appTitle,
+    updatedAt: Date.now(),
+    updatedBy: getDeviceId()
+  };
+  
+  try {
+    const encrypted = simpleEncrypt(data, state.syncKey);
+    let binId = localStorage.getItem(SYNC_BIN_ID_KEY);
+    
+    if (binId) {
+      const resp = await fetch(`${SYNC_API_BASE}/${binId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: encrypted })
+      });
+      if (!resp.ok) {
+        binId = null;
+      }
+    }
+    
+    if (!binId) {
+      const resp = await fetch(SYNC_API_BASE, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: encrypted })
+      });
+      if (!resp.ok) throw new Error('创建失败: ' + resp.status);
+      // 从 Location header 提取 ID
+      const location = resp.headers.get('Location');
+      binId = location ? location.split('/').pop() : null;
+      if (!binId) throw new Error('获取ID失败');
+      localStorage.setItem(SYNC_BIN_ID_KEY, binId);
+    }
+    
+    state.lastSyncTime = Date.now();
+    return { success: true, time: state.lastSyncTime };
+  } catch(e) {
+    return { success: false, error: e.message };
+  }
+}
+
+// 从云端下载数据
+async function downloadFromCloud() {
+  if (!state.syncKey) return { success: false, error: '未设置同步密钥' };
+  
+  const binId = localStorage.getItem(SYNC_BIN_ID_KEY);
+  if (!binId) return { success: false, error: '尚未上传过数据，请先在另一设备上上传' };
+  
+  try {
+    const resp = await fetch(`${SYNC_API_BASE}/${binId}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (!resp.ok) return { success: false, error: '读取失败: ' + resp.status };
+    
+    const result = await resp.json();
+    const encrypted = result.data;
+    if (!encrypted) return { success: false, error: '云端数据为空' };
+    
+    const data = simpleDecrypt(encrypted, state.syncKey);
+    if (!data) return { success: false, error: '解密失败，密钥不正确' };
+    
+    // 合并数据到 state
+    if (data.recipes) state.recipes = data.recipes;
+    if (data.customCategories) state.customCategories = data.customCategories;
+    if (data.customTags) state.customTags = data.customTags;
+    if (data.shoppingItems) state.shoppingItems = data.shoppingItems;
+    if (data.inventoryItems) state.inventoryItems = data.inventoryItems;
+    if (data.appIcon) state.appIcon = data.appIcon;
+    if (data.appTitle) state.appTitle = data.appTitle;
+    
+    saveData();
+    state.lastSyncTime = Date.now();
+    state.syncEnabled = true;
+    return { success: true, time: state.lastSyncTime };
+  } catch(e) {
+    return { success: false, error: e.message };
+  }
+}
+
+// 自动同步：每次修改后上传
+let syncDebounceTimer = null;
+let autoPullInterval = null;
+
+function autoSync() {
+  if (!state.syncKey || !state.syncEnabled) return;
+  clearTimeout(syncDebounceTimer);
+  syncDebounceTimer = setTimeout(async () => {
+    const result = await uploadToCloud();
+    if (result.success) {
+      console.log('自动上传成功');
+    }
+  }, 2000);
+}
+
+// 定时从云端拉取数据（每 30 秒检查一次）
+function startAutoPull() {
+  stopAutoPull();
+  autoPullInterval = setInterval(async () => {
+    if (!state.syncKey || !state.syncEnabled) return;
+    const binId = localStorage.getItem(SYNC_BIN_ID_KEY);
+    if (!binId) return;
+    try {
+      const resp = await fetch(`${SYNC_API_BASE}/${binId}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (!resp.ok) return;
+      const result = await resp.json();
+      const encrypted = result.data;
+      if (!encrypted) return;
+      const data = simpleDecrypt(encrypted, state.syncKey);
+      if (!data) return;
+      // 检查是否有新数据（时间戳比较）
+      if (data.updatedAt && data.updatedAt > state.lastSyncTime) {
+        if (data.recipes) state.recipes = data.recipes;
+        if (data.customCategories) state.customCategories = data.customCategories;
+        if (data.customTags) state.customTags = data.customTags;
+        if (data.shoppingItems) state.shoppingItems = data.shoppingItems;
+        if (data.inventoryItems) state.inventoryItems = data.inventoryItems;
+        if (data.appIcon) state.appIcon = data.appIcon;
+        if (data.appTitle) state.appTitle = data.appTitle;
+        state.lastSyncTime = data.updatedAt;
+        saveData();
+        renderAll();
+        applyAppIcon();
+        document.getElementById('appTitle').textContent = state.appTitle;
+        document.title = state.appTitle;
+        console.log('自动拉取同步成功');
+      }
+    } catch(e) {}
+  }, 30000);
+}
+
+function stopAutoPull() {
+  if (autoPullInterval) {
+    clearInterval(autoPullInterval);
+    autoPullInterval = null;
+  }
+}
+
+// ========== 可选图标列表 ==========
+const APP_ICONS = [
+  { id: 'baker-girl', label: '做面包女孩', src: 'icon-512.png', emoji: null },
+  { id: 'bread', label: '吐司面包', src: null, emoji: '🥖' },
+  { id: 'croissant', label: '牛角包', src: null, emoji: '🥐' },
+  { id: 'cake', label: '草莓蛋糕', src: null, emoji: '🍰' },
+  { id: 'cookie', label: '饼干', src: null, emoji: '🍪' },
+  { id: 'cupcake', label: '纸杯蛋糕', src: null, emoji: '🧁' },
+  { id: 'pie', label: '派', src: null, emoji: '🥧' },
+  { id: 'pretzel', label: '椒盐卷饼', src: null, emoji: '🥨' },
+  { id: 'waffle', label: '华夫饼', src: null, emoji: '🧇' },
+];
+
+// ========== 初始化 ==========
+function init() {
+  loadData();
+  renderAll();
+  updateThemeIcon();
+  applyFontSize();
+  applyAppIcon();
+  updateTrashBadge();
+  // 恢复标题
+  document.getElementById('appTitle').textContent = state.appTitle;
+  document.title = state.appTitle;
+  // 如果同步已启用，启动自动拉取
+  if (state.syncEnabled && state.syncKey) {
+    startAutoPull();
+  }
+  // 标题长按编辑
+  const titleEl = document.getElementById('appTitle');
+  let titlePressTimer;
+  titleEl.addEventListener('touchstart', function(e) {
+    titlePressTimer = setTimeout(() => { e.preventDefault(); editAppTitle(); }, 600);
+  });
+  titleEl.addEventListener('touchend', () => clearTimeout(titlePressTimer));
+  titleEl.addEventListener('touchmove', () => clearTimeout(titlePressTimer));
+}
+
+function loadData() {
+  try {
+    const saved = localStorage.getItem('baking_workbench_data');
+    if (saved) {
+      const data = JSON.parse(saved);
+      state.recipes = data.recipes || DEFAULT_RECIPES;
+      state.customCategories = data.customCategories || [];
+      state.customTags = data.customTags || [];
+      state.shoppingItems = data.shoppingItems || [];
+      state.inventoryItems = data.inventoryItems || [];
+      state.fontLevel = data.fontLevel ?? 1;
+      state.theme = data.theme || 'light';
+      state.appIcon = data.appIcon || 'baker-girl';
+      state.appTitle = data.appTitle || '烘焙工作台';
+      state.syncKey = data.syncKey || '';
+      state.syncEnabled = data.syncEnabled || false;
+      state.lastSyncTime = data.lastSyncTime || 0;
+      state.trashRecipes = data.trashRecipes || [];
+    } else {
+      state.recipes = [...DEFAULT_RECIPES];
+    }
+  } catch(e) {
+    state.recipes = [...DEFAULT_RECIPES];
+  }
+  applyTheme();
+}
+
+function saveData() {
+  const data = {
+    recipes: state.recipes,
+    customCategories: state.customCategories,
+    customTags: state.customTags,
+    shoppingItems: state.shoppingItems,
+    inventoryItems: state.inventoryItems,
+    fontLevel: state.fontLevel,
+    theme: state.theme,
+    appIcon: state.appIcon,
+    appTitle: state.appTitle,
+    syncKey: state.syncKey,
+    syncEnabled: state.syncEnabled,
+    lastSyncTime: state.lastSyncTime,
+    trashRecipes: state.trashRecipes
+  };
+  localStorage.setItem('baking_workbench_data', JSON.stringify(data));
+  // 自动同步到云端
+  autoSync();
+}
+
+// ========== 筛选逻辑 ==========
+function getFilteredRecipes() {
+  let recipes = [...state.recipes];
+
+  // 分类筛选
+  if (state.activeCategory !== '全部配方') {
+    recipes = recipes.filter(r => r.category === state.activeCategory);
+  }
+
+  // 标签筛选
+  if (state.activeTags.length > 0) {
+    recipes = recipes.filter(r => state.activeTags.some(t => r.tags.includes(t)));
+  }
+
+  // 原料反查
+  if (state.ingredientFilter) {
+    const keyword = state.ingredientFilter.toLowerCase();
+    recipes = recipes.filter(r =>
+      r.ingredients.some(i => i.name.toLowerCase().includes(keyword))
+    );
+  }
+
+  // 全局搜索
+  if (state.searchQuery) {
+    const q = state.searchQuery.toLowerCase();
+    recipes = recipes.filter(r =>
+      r.name.toLowerCase().includes(q) ||
+      r.category.toLowerCase().includes(q) ||
+      r.tags.some(t => t.toLowerCase().includes(q)) ||
+      r.ingredients.some(i => i.name.toLowerCase().includes(q)) ||
+      (r.note && r.note.toLowerCase().includes(q))
+    );
+  }
+
+  // 收藏筛选（通过面板触发时设置）
+  if (state.showFavoritesOnly) {
+    recipes = recipes.filter(r => r.favorite);
+  }
+
+  return recipes;
+}
+
+function getCategoryCounts() {
+  const counts = {};
+  DEFAULT_CATEGORIES.forEach(c => counts[c] = 0);
+  state.customCategories.forEach(c => counts[c] = 0);
+  state.recipes.forEach(r => {
+    counts[r.category] = (counts[r.category] || 0) + 1;
+  });
+  const total = state.recipes.length;
+  counts['全部配方'] = total;
+  return counts;
+}
+
+// ========== 渲染 ==========
+function renderAll() {
+  renderSidebar();
+  renderContent();
+  saveData();
+}
+
+function renderSidebar() {
+  const catList = document.getElementById('categoryList');
+  const tagList = document.getElementById('tagList');
+  const counts = getCategoryCounts();
+  const allCategories = [...DEFAULT_CATEGORIES, ...state.customCategories];
+
+  const catEmojis = {
+    '全部配方': '📋', '面包类': '🍞', '甜品类': '🍮', '蛋糕类': '🎂',
+    '饼干类': '🍪', '中式烘焙类': '🥮'
+  };
+
+  catList.innerHTML = allCategories.map(cat => {
+    const isCustom = state.customCategories.includes(cat);
+    const isDefault = DEFAULT_CATEGORIES.includes(cat);
+    const canEdit = isCustom || (isDefault && cat !== '全部配方');
+    return `
+    <div class="sidebar-item ${state.activeCategory === cat ? 'active' : ''}"
+         onclick="setCategory('${cat}')"
+         data-cat="${cat}"
+         oncontextmenu="event.preventDefault(); handleCategoryLongPress('${cat}'); return false;">
+      <span class="emoji">${(state.categoryEmojis && state.categoryEmojis[cat]) || catEmojis[cat] || '📌'}</span>
+      ${cat}
+      <span class="count">${counts[cat] || 0}</span>
+    </div>
+  `}).join('');
+
+  // 为自定义分类和非「全部配方」的默认分类绑定长按
+  catList.querySelectorAll('.sidebar-item').forEach(el => {
+    const cat = el.dataset.cat;
+    if (cat === '全部配方') return;
+    let longPressTimer;
+    el.addEventListener('touchstart', function(e) {
+      longPressTimer = setTimeout(() => {
+        e.preventDefault();
+        handleCategoryLongPress(cat);
+      }, 600);
+    });
+    el.addEventListener('touchend', () => clearTimeout(longPressTimer));
+    el.addEventListener('touchmove', () => clearTimeout(longPressTimer));
+  });
+
+  const allTags = [...PRESET_TAGS, ...state.customTags];
+  tagList.innerHTML = allTags.map(tag => `
+    <div class="tag-item ${state.activeTags.includes(tag) ? 'active' : ''}"
+         onclick="toggleTag('${tag}')"
+         data-tag="${tag}"
+         oncontextmenu="event.preventDefault(); handleTagLongPress('${tag}'); return false;">
+      # ${tag}
+    </div>
+  `).join('');
+
+  // 为所有标签绑定长按
+  tagList.querySelectorAll('.tag-item').forEach(el => {
+    const tag = el.dataset.tag;
+    let longPressTimer;
+    el.addEventListener('touchstart', function(e) {
+      longPressTimer = setTimeout(() => {
+        e.preventDefault();
+        handleTagLongPress(tag);
+      }, 600);
+    });
+    el.addEventListener('touchend', () => clearTimeout(longPressTimer));
+    el.addEventListener('touchmove', () => clearTimeout(longPressTimer));
+  });
+}
+
+function renderContent() {
+  const recipes = getFilteredRecipes();
+  const sectionTitle = document.getElementById('sectionTitle');
+  const filterStats = document.getElementById('filterStats');
+  const recipeList = document.getElementById('recipeList');
+  const emptyState = document.getElementById('emptyState');
+  const quickTags = document.getElementById('quickTags');
+
+  sectionTitle.textContent = state.activeCategory;
+  filterStats.textContent = `共 ${recipes.length} 个配方`;
+
+  // 快捷标签
+  const allTags = [...PRESET_TAGS, ...state.customTags];
+  quickTags.innerHTML = allTags.map(tag => `
+    <span class="quick-tag ${state.activeTags.includes(tag) ? 'active' : ''}"
+          onclick="toggleTag('${tag}')"># ${tag}</span>
+  `).join('') + '<button class="btn-clear-tags" onclick="clearAllTags()">清空筛选</button>';
+
+  if (recipes.length === 0) {
+    recipeList.innerHTML = '';
+    emptyState.style.display = 'block';
+  } else {
+    emptyState.style.display = 'none';
+    recipeList.innerHTML = recipes.map(r => renderRecipeCard(r)).join('');
+  }
+}
+
+function renderRecipeCard(r) {
+  const catEmojis = { '面包类': '🍞', '甜品类': '🍮', '蛋糕类': '🎂', '饼干类': '🍪', '中式烘焙类': '🥮' };
+  const scaledIngredients = r.ingredients.map(i => ({
+    ...i,
+    scaledAmount: Math.round(i.amount * r.scale * 10) / 10
+  }));
+
+  return `
+    <div class="recipe-card" id="recipe-${r.id}">
+      <div class="recipe-card-header">
+        <span class="recipe-category-tag">${catEmojis[r.category] || '📌'} ${r.category}</span>
+        <div class="recipe-card-actions" style="position:relative;">
+          <button class="${r.favorite ? 'fav-active' : ''}" onclick="toggleFavorite(${r.id})" title="收藏">${r.favorite ? '❤️' : '🤍'}</button>
+          <button onclick="openEditRecipeModal(${r.id})" title="编辑">✏️</button>
+          <button onclick="confirmDelete(${r.id})" title="删除">🗑</button>
+          <button onclick="toggleDropdown(event, ${r.id})" title="更多">⋯</button>
+        </div>
+      </div>
+
+      <div class="recipe-name">${r.name}</div>
+      <div class="recipe-stars">
+        ${Array.from({length:5}, (_,i) => `<span class="${i < r.rating ? '' : 'empty'}">★</span>`).join('')}
+      </div>
+
+      <div class="recipe-params">
+        ${r.temp ? `<span class="param-capsule temp">🔥 ${r.temp}</span>` : ''}
+        ${r.time ? `<span class="param-capsule time">⏱ ${r.time}</span>` : ''}
+        ${r.storage ? `<span class="param-capsule storage">📦 ${r.storage}</span>` : ''}
+      </div>
+
+      ${r.note ? `
+      <div class="recipe-note">
+        <span class="note-icon">💡</span>
+        <span>${r.note}</span>
+      </div>` : ''}
+
+      <div class="scale-section">
+        <span class="scale-label">倍率换算</span>
+        ${[0.5].map(s => `
+          <button class="scale-btn ${r.scale === s ? 'active' : ''}"
+                  onclick="setScale(${r.id}, ${s})">½</button>
+        `).join('')}
+        <input type="number" class="scale-custom" placeholder="自定义"
+               onchange="setCustomScale(${r.id}, this.value)" step="0.1" min="0.1">
+        <button class="btn-reset" onclick="resetScale(${r.id})">复位</button>
+      </div>
+
+      <div class="ingredients-list">
+        ${scaledIngredients.map((ing, idx) => `
+          <div class="ingredient-row">
+            <span class="ingredient-name">${ing.name}</span>
+            <span class="ingredient-amount" onclick="editIngredientAmount(event, ${r.id}, ${idx})"
+                  data-id="${r.id}" data-idx="${idx}">
+              ${ing.scaledAmount} ${ing.unit}
+            </span>
+          </div>
+        `).join('')}
+      </div>
+
+      <button class="btn-copy" onclick="copyIngredients(${r.id})">
+        📋 复制配料清单
+      </button>
+    </div>
+  `;
+}
+
+// ========== 配方操作 ==========
+function openNewRecipeModal() {
+  state.editingRecipeId = null;
+  document.getElementById('recipeModalTitle').textContent = '新建配方';
+  document.getElementById('recipeName').value = '';
+  document.getElementById('recipeCategory').value = '面包类';
+  document.getElementById('recipeTags').value = '';
+  document.getElementById('recipeRating').value = '5';
+  document.getElementById('recipeTemp').value = '';
+  document.getElementById('recipeTime').value = '';
+  document.getElementById('recipeStorage').value = '常温';
+  document.getElementById('recipeNote').value = '';
+  document.getElementById('ingredientInputs').innerHTML = `
+    <div class="ingredient-input-row">
+      <input type="text" placeholder="原料名称" class="ing-name">
+      <input type="text" placeholder="用量" class="ing-amount" style="width:80px;">
+      <input type="text" placeholder="单位" class="ing-unit" style="width:60px;">
+    </div>
+  `;
+  document.getElementById('recipeModal').style.display = 'flex';
+}
+
+function openEditRecipeModal(id) {
+  const r = state.recipes.find(r => r.id === id);
+  if (!r) return;
+  state.editingRecipeId = id;
+  document.getElementById('recipeModalTitle').textContent = '编辑配方';
+  document.getElementById('recipeName').value = r.name;
+  document.getElementById('recipeCategory').value = r.category;
+  document.getElementById('recipeTags').value = r.tags.join(', ');
+  document.getElementById('recipeRating').value = r.rating;
+  document.getElementById('recipeTemp').value = r.temp || '';
+  document.getElementById('recipeTime').value = r.time || '';
+  document.getElementById('recipeStorage').value = r.storage || '常温';
+  document.getElementById('recipeNote').value = r.note || '';
+
+  const inputs = document.getElementById('ingredientInputs');
+  inputs.innerHTML = r.ingredients.map(i => `
+    <div class="ingredient-input-row">
+      <input type="text" placeholder="原料名称" class="ing-name" value="${i.name}">
+      <input type="text" placeholder="用量" class="ing-amount" style="width:80px;" value="${i.amount}">
+      <input type="text" placeholder="单位" class="ing-unit" style="width:60px;" value="${i.unit}">
+      <button class="btn-remove-ing" onclick="this.parentElement.remove()">✕</button>
+    </div>
+  `).join('');
+
+  document.getElementById('recipeModal').style.display = 'flex';
+}
+
+function closeRecipeModal() {
+  document.getElementById('recipeModal').style.display = 'none';
+  state.editingRecipeId = null;
+}
+
+function saveRecipe() {
+  const name = document.getElementById('recipeName').value.trim();
+  if (!name) { showToast('请输入配方名称'); return; }
+
+  const category = document.getElementById('recipeCategory').value;
+  const tagsStr = document.getElementById('recipeTags').value.trim();
+  const tags = tagsStr ? tagsStr.split(/[,，]/).map(t => t.trim()).filter(Boolean) : [];
+  const rating = parseInt(document.getElementById('recipeRating').value);
+  const temp = document.getElementById('recipeTemp').value.trim();
+  const time = document.getElementById('recipeTime').value.trim();
+  const storage = document.getElementById('recipeStorage').value;
+  const note = document.getElementById('recipeNote').value.trim();
+
+  const ingRows = document.querySelectorAll('#ingredientInputs .ingredient-input-row');
+  const ingredients = [];
+  ingRows.forEach(row => {
+    const nameEl = row.querySelector('.ing-name');
+    const amountEl = row.querySelector('.ing-amount');
+    const unitEl = row.querySelector('.ing-unit');
+    if (nameEl && nameEl.value.trim()) {
+      ingredients.push({
+        name: nameEl.value.trim(),
+        amount: parseFloat(amountEl.value) || 0,
+        unit: unitEl.value.trim() || 'g'
+      });
+    }
+  });
+
+  if (ingredients.length === 0) { showToast('请至少添加一种配料'); return; }
+
+  if (state.editingRecipeId) {
+    const idx = state.recipes.findIndex(r => r.id === state.editingRecipeId);
+    if (idx !== -1) {
+      state.recipes[idx] = {
+        ...state.recipes[idx],
+        name, category, tags, rating, temp, time, storage, note, ingredients
+      };
+    }
+  } else {
+    const newId = state.recipes.length > 0 ? Math.max(...state.recipes.map(r => r.id)) + 1 : 1;
+    state.recipes.push({
+      id: newId, name, category, tags, rating, temp, time, storage, note,
+      ingredients, scale: 1, favorite: false
+    });
+  }
+
+  closeRecipeModal();
+  renderAll();
+  showToast(state.editingRecipeId ? '配方已更新 ✅' : '配方已创建 🎉');
+}
+
+function confirmDelete(id) {
+  state.pendingDeleteId = id;
+  const r = state.recipes.find(r => r.id === id);
+  document.getElementById('confirmMsg').textContent = `确定要删除「${r?.name}」吗？配方将移到垃圾桶，可恢复。`;
+  document.getElementById('confirmModal').style.display = 'flex';
+}
+
+function closeConfirm() {
+  document.getElementById('confirmModal').style.display = 'none';
+  state.pendingDeleteId = null;
+}
+
+document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
+  if (state.pendingDeleteId) {
+    // 移到垃圾桶
+    const recipe = state.recipes.find(r => r.id === state.pendingDeleteId);
+    if (recipe) {
+      recipe.trashedAt = Date.now();
+      state.trashRecipes.push(recipe);
+      state.recipes = state.recipes.filter(r => r.id !== state.pendingDeleteId);
+    }
+    saveData();
+    renderAll();
+    updateTrashBadge();
+    showToast('配方已移到垃圾桶 🗑️');
+  }
+  closeConfirm();
+});
+
+// ========== 垃圾桶功能 ==========
+function toggleTrashPanel() {
+  const panel = document.getElementById('trashPanel');
+  panel.classList.toggle('open');
+  if (panel.classList.contains('open')) renderTrashList();
+}
+
+function renderTrashList() {
+  const list = document.getElementById('trashList');
+  const empty = document.getElementById('trashEmpty');
+  const clearBtn = document.getElementById('trashClearAll');
+  
+  if (state.trashRecipes.length === 0) {
+    list.innerHTML = '';
+    empty.style.display = 'block';
+    clearBtn.style.display = 'none';
+  } else {
+    empty.style.display = 'none';
+    clearBtn.style.display = 'block';
+    list.innerHTML = state.trashRecipes.map((r, idx) => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;margin-bottom:6px;background:var(--bg);border-radius:10px;border:1px solid var(--border-light);">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.name}</div>
+          <div style="font-size:11px;color:var(--text-muted);">${r.category} · 删除于 ${new Date(r.trashedAt).toLocaleDateString('zh-CN')}</div>
+        </div>
+        <div style="display:flex;gap:4px;flex-shrink:0;margin-left:8px;">
+          <button class="btn btn-secondary" onclick="restoreFromTrash(${idx})" style="font-size:10px;padding:4px 8px;">↩ 恢复</button>
+          <button class="btn btn-danger" onclick="permanentDelete(${idx})" style="font-size:10px;padding:4px 8px;">❌ 永久删除</button>
+        </div>
+      </div>
+    `).join('');
+  }
+  updateTrashBadge();
+}
+
+function restoreFromTrash(idx) {
+  const recipe = state.trashRecipes[idx];
+  delete recipe.trashedAt;
+  state.recipes.push(recipe);
+  state.trashRecipes.splice(idx, 1);
+  saveData();
+  renderAll();
+  renderTrashList();
+  showToast('配方已恢复 ✅');
+}
+
+function permanentDelete(idx) {
+  const recipe = state.trashRecipes[idx];
+  if (confirm(`确定永久删除「${recipe.name}」？此操作不可恢复！`)) {
+    state.trashRecipes.splice(idx, 1);
+    saveData();
+    renderTrashList();
+    showToast('配方已永久删除');
+  }
+}
+
+function clearAllTrash() {
+  if (state.trashRecipes.length === 0) return;
+  if (confirm(`确定清空垃圾桶？将永久删除 ${state.trashRecipes.length} 个配方！`)) {
+    state.trashRecipes = [];
+    saveData();
+    renderTrashList();
+    showToast('垃圾桶已清空');
+  }
+}
+
+function updateTrashBadge() {
+  // 侧边栏角标
+  const badge = document.getElementById('trashBadge');
+  if (badge) {
+    if (state.trashRecipes.length > 0) {
+      badge.textContent = state.trashRecipes.length;
+      badge.style.display = 'inline';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+  // 导航栏按钮角标（保留兼容）
+  const btn = document.getElementById('trashBtn');
+  if (btn) {
+    if (state.trashRecipes.length > 0) {
+      btn.setAttribute('data-count', state.trashRecipes.length);
+    } else {
+      btn.removeAttribute('data-count');
+    }
+  }
+}
+
+function toggleFavorite(id) {
+  const r = state.recipes.find(r => r.id === id);
+  if (r) {
+    r.favorite = !r.favorite;
+    renderAll();
+  }
+}
+
+function setScale(id, scale) {
+  const r = state.recipes.find(r => r.id === id);
+  if (r) {
+    r.scale = scale;
+    renderContent();
+  }
+}
+
+function setCustomScale(id, value) {
+  const scale = parseFloat(value);
+  if (scale > 0) {
+    setScale(id, scale);
+  }
+}
+
+function resetScale(id) {
+  setScale(id, 1);
+}
+
+function editIngredientAmount(event, recipeId, ingIdx) {
+  event.stopPropagation();
+  const r = state.recipes.find(r => r.id === recipeId);
+  if (!r) return;
+  const ing = r.ingredients[ingIdx];
+  const span = event.target;
+  const currentDisplay = Math.round(ing.amount * r.scale * 10) / 10;
+  span.innerHTML = `<input type="number" value="${currentDisplay}" 
+    onblur="commitIngredientEdit(this, ${recipeId}, ${ingIdx})"
+    onkeydown="if(event.key==='Enter')this.blur()" step="0.1">`;
+  span.querySelector('input').focus();
+  span.querySelector('input').select();
+}
+
+function commitIngredientEdit(input, recipeId, ingIdx) {
+  const r = state.recipes.find(r => r.id === recipeId);
+  if (!r) return;
+  const newScaled = parseFloat(input.value);
+  if (isNaN(newScaled) || newScaled <= 0) {
+    renderContent();
+    return;
+  }
+  // 反推原始用量
+  r.ingredients[ingIdx].amount = Math.round(newScaled / r.scale * 10) / 10;
+  renderContent();
+}
+
+function copyIngredients(id) {
+  const r = state.recipes.find(r => r.id === id);
+  if (!r) return;
+  const scaled = r.ingredients.map(i => {
+    const amt = Math.round(i.amount * r.scale * 10) / 10;
+    return `${i.name}: ${amt}${i.unit}`;
+  }).join('\n');
+  navigator.clipboard.writeText(`【${r.name}】配料清单 (×${r.scale})\n${scaled}`).then(() => {
+    showToast('配料清单已复制 📋');
+  }).catch(() => showToast('复制失败，请重试'));
+}
+
+function shareRecipe(id) {
+  const r = state.recipes.find(r => r.id === id);
+  if (!r) return;
+  const text = `🥖 ${r.name}\n分类：${r.category}\n${r.temp ? '温度：'+r.temp+'\n' : ''}${r.time ? '时长：'+r.time+'\n' : ''}`;
+  if (navigator.share) {
+    navigator.share({ title: r.name, text }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(text).then(() => showToast('已复制分享内容 🔗'));
+  }
+}
+
+function printRecipe(id) {
+  const r = state.recipes.find(r => r.id === id);
+  if (!r) return;
+  const scaled = r.ingredients.map(i => {
+    const amt = Math.round(i.amount * r.scale * 10) / 10;
+    return `${i.name}: ${amt}${i.unit}`;
+  }).join('\n');
+  const win = window.open('', '_blank', 'width=400,height=600');
+  win.document.write(`
+    <html><head><meta charset="utf-8"><title>${r.name}</title>
+    <style>body{font-family:sans-serif;padding:20px;max-width:400px;margin:auto}
+    h1{font-size:20px} .info{color:#666;margin:4px 0}
+    pre{background:#f5f0e8;padding:12px;border-radius:8px;font-size:14px}</style></head>
+    <body><h1>🥖 ${r.name}</h1>
+    <p class="info">${r.category} | ${r.temp||''} | ${r.time||''} | ${r.storage||''}</p>
+    ${r.note ? '<p class="info">💡 '+r.note+'</p>' : ''}
+    <h3>配料清单 (×${r.scale})</h3><pre>${scaled}</pre></body></html>
+  `);
+  win.document.close();
+  win.print();
+}
+
+function toggleDropdown(event, id) {
+  event.stopPropagation();
+  // 移除已有下拉菜单
+  const existing = document.querySelector('.dropdown-menu');
+  if (existing) existing.remove();
+
+  const menu = document.createElement('div');
+  menu.className = 'dropdown-menu';
+  menu.innerHTML = `
+    <button onclick="toggleFavorite(${id});document.querySelector('.dropdown-menu')?.remove()">⭐ 收藏/取消</button>
+    <button onclick="copyIngredients(${id});document.querySelector('.dropdown-menu')?.remove()">📋 复制配料</button>
+    <button onclick="addToShopping(${id});document.querySelector('.dropdown-menu')?.remove()">🛒 加入采购清单</button>
+    <button class="danger" onclick="confirmDelete(${id});document.querySelector('.dropdown-menu')?.remove()">🗑 删除</button>
+  `;
+  event.target.closest('.recipe-card-actions').appendChild(menu);
+
+  // 点击其他地方关闭
+  setTimeout(() => {
+    document.addEventListener('click', function closeMenu() {
+      menu.remove();
+      document.removeEventListener('click', closeMenu);
+    }, { once: true });
+  }, 0);
+}
+
+function addToShopping(id) {
+  const r = state.recipes.find(r => r.id === id);
+  if (!r) return;
+  r.ingredients.forEach(i => {
+    if (!state.shoppingItems.find(s => s.name === i.name && !s.checked)) {
+      state.shoppingItems.push({ name: i.name, quantity: i.amount, unit: i.unit, checked: false });
+    }
+  });
+  renderShoppingList();
+  saveData();
+  showToast('已加入采购清单 🛒');
+}
+
+// ========== 分类与标签操作 ==========
+function setCategory(cat) {
+  state.activeCategory = cat;
+  state.activeTags = [];
+  state.ingredientFilter = '';
+  state.searchQuery = '';
+  state.showFavoritesOnly = false;
+  document.getElementById('ingredientSearch').value = '';
+  document.getElementById('globalSearch').value = '';
+  renderAll();
+}
+
+function toggleTag(tag) {
+  const idx = state.activeTags.indexOf(tag);
+  if (idx >= 0) {
+    state.activeTags.splice(idx, 1);
+  } else {
+    state.activeTags.push(tag);
+  }
+  renderContent();
+}
+
+function clearAllTags() {
+  state.activeTags = [];
+  renderContent();
+}
+
+function addCustomCategory() {
+  const name = prompt('请输入新分类名称：');
+  if (name && name.trim() && !DEFAULT_CATEGORIES.includes(name.trim()) && !state.customCategories.includes(name.trim())) {
+    state.customCategories.push(name.trim());
+    renderAll();
+  } else if (name) {
+    showToast('分类名已存在或无效');
+  }
+}
+
+function addCustomTag() {
+  const name = prompt('请输入新标签名称：');
+  const allTags = [...PRESET_TAGS, ...state.customTags];
+  if (name && name.trim() && !allTags.includes(name.trim())) {
+    state.customTags.push(name.trim());
+    renderAll();
+  } else if (name) {
+    showToast('标签名已存在或无效');
+  }
+}
+
+// ========== 长按编辑/删除分类和标签 ==========
+function handleCategoryLongPress(cat) {
+  if (cat === '全部配方') return;
+  const isCustom = state.customCategories.includes(cat);
+  const choice = prompt(
+    `分类「${cat}」\n\n请输入：\n1=重命名  2=改图标  3=删除\n\n（输入数字选择）`
+  );
+
+  if (choice === '1') {
+    // 重命名
+    const newName = prompt('请输入新名称：', cat);
+    if (newName && newName.trim() && newName.trim() !== cat) {
+      const trimmed = newName.trim();
+      if (isCustom) {
+        const idx = state.customCategories.indexOf(cat);
+        if (idx >= 0) state.customCategories[idx] = trimmed;
+      }
+      state.recipes.forEach(r => { if (r.category === cat) r.category = trimmed; });
+      if (state.activeCategory === cat) state.activeCategory = trimmed;
+      renderAll();
+      showToast(`分类已重命名为「${trimmed}」`);
+    }
+  } else if (choice === '2') {
+    // 改图标
+    const emoji = prompt('请输入新图标（emoji表情）：', '📌');
+    if (emoji && emoji.trim()) {
+      state.categoryEmojis = state.categoryEmojis || {};
+      state.categoryEmojis[cat] = emoji.trim();
+      renderAll();
+      showToast('图标已更新');
+    }
+  } else if (choice === '3') {
+    if (isCustom) {
+      if (confirm(`确定删除分类「${cat}」吗？`)) {
+        state.customCategories = state.customCategories.filter(c => c !== cat);
+        if (state.activeCategory === cat) state.activeCategory = '全部配方';
+        renderAll();
+        showToast(`分类「${cat}」已删除`);
+      }
+    } else {
+      showToast('默认分类不能删除');
+    }
+  }
+}
+
+function handleTagLongPress(tag) {
+  const isPreset = PRESET_TAGS.includes(tag);
+  const choice = prompt(
+    `标签「${tag}」\n\n请输入：\n1=修改内容  2=删除\n\n（输入数字选择）`
+  );
+
+  if (choice === '1') {
+    const newName = prompt('请输入新标签名：', tag);
+    if (newName && newName.trim() && newName.trim() !== tag) {
+      const trimmed = newName.trim();
+      const allTags = [...PRESET_TAGS, ...state.customTags];
+      if (allTags.includes(trimmed)) { showToast('标签名已存在'); return; }
+      if (isPreset) {
+        PRESET_TAGS.splice(PRESET_TAGS.indexOf(tag), 1);
+        state.customTags.push(trimmed);
+      } else {
+        const idx = state.customTags.indexOf(tag);
+        if (idx >= 0) state.customTags[idx] = trimmed;
+      }
+      state.recipes.forEach(r => { const tIdx = r.tags.indexOf(tag); if (tIdx >= 0) r.tags[tIdx] = trimmed; });
+      const aIdx = state.activeTags.indexOf(tag);
+      if (aIdx >= 0) state.activeTags[aIdx] = trimmed;
+      renderAll();
+      showToast(`标签已更新为「${trimmed}」`);
+    }
+  } else if (choice === '2') {
+    if (confirm(`确定删除标签「${tag}」吗？`)) {
+      if (isPreset) { PRESET_TAGS.splice(PRESET_TAGS.indexOf(tag), 1); }
+      else { state.customTags = state.customTags.filter(t => t !== tag); }
+      state.recipes.forEach(r => { r.tags = r.tags.filter(t => t !== tag); });
+      state.activeTags = state.activeTags.filter(t => t !== tag);
+      renderAll();
+      showToast(`标签「${tag}」已删除`);
+    }
+  }
+}
+
+// ========== 搜索 ==========
+function performSearch() {
+  state.searchQuery = document.getElementById('globalSearch').value.trim();
+  renderContent();
+}
+
+function searchByIngredient() {
+  state.ingredientFilter = document.getElementById('ingredientSearch').value.trim();
+  renderContent();
+}
+
+function clearIngredientSearch() {
+  state.ingredientFilter = '';
+  document.getElementById('ingredientSearch').value = '';
+  renderContent();
+}
+
+// ========== 面板切换 ==========
+function togglePanel(type) {
+  if (type === 'favorites') {
+    state.showFavoritesOnly = !state.showFavoritesOnly;
+    if (state.showFavoritesOnly) {
+      document.getElementById('favoritesPanel').classList.add('open');
+      renderFavoritesPanel();
+    } else {
+      document.getElementById('favoritesPanel').classList.remove('open');
+    }
+    renderContent();
+  } else if (type === 'shopping') {
+    const panel = document.getElementById('shoppingPanel');
+    panel.classList.toggle('open');
+    if (panel.classList.contains('open')) renderShoppingList();
+  } else if (type === 'inventory') {
+    const panel = document.getElementById('inventoryPanel');
+    panel.classList.toggle('open');
+    if (panel.classList.contains('open')) renderInventoryTable();
+  }
+}
+
+// ========== 云端同步 ==========
+function toggleSyncPanel() {
+  const panel = document.getElementById('syncPanel');
+  panel.classList.toggle('open');
+  if (panel.classList.contains('open')) {
+    document.getElementById('syncKeyInput').value = state.syncKey || '';
+    document.getElementById('autoSyncToggle').checked = state.syncEnabled;
+    updateSyncStatus();
+  }
+}
+
+function toggleSyncKeyVisibility() {
+  const input = document.getElementById('syncKeyInput');
+  const btn = document.getElementById('togglePwdBtn');
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.textContent = '🙈';
+  } else {
+    input.type = 'password';
+    btn.textContent = '👁';
+  }
+}
+
+function updateSyncStatus() {
+  const statusEl = document.getElementById('syncStatusText');
+  const timeEl = document.getElementById('syncTimeText');
+  if (!statusEl) return;
+  if (state.syncKey && state.syncEnabled) {
+    statusEl.textContent = '✅ 自动同步已开启';
+  } else if (state.syncKey) {
+    statusEl.textContent = '✅ 同步密钥已设置';
+  } else {
+    statusEl.textContent = '⚠️ 请先设置同步密钥';
+  }
+  if (timeEl) {
+    timeEl.textContent = state.lastSyncTime ? '上次同步：' + new Date(state.lastSyncTime).toLocaleString('zh-CN') : '';
+  }
+}
+
+function toggleAutoSync(checked) {
+  state.syncEnabled = checked;
+  if (checked && !state.syncKey) {
+    const key = document.getElementById('syncKeyInput').value.trim();
+    if (key) {
+      state.syncKey = key;
+    } else {
+      showToast('请先输入同步密钥');
+      document.getElementById('autoSyncToggle').checked = false;
+      return;
+    }
+  }
+  saveData();
+  updateSyncStatus();
+  if (checked) {
+    autoSync();
+    startAutoPull();
+    showToast('自动同步已开启 ✅ 每30秒检查更新');
+  } else {
+    stopAutoPull();
+  }
+}
+
+async function doSyncUpload() {
+  const key = document.getElementById('syncKeyInput').value.trim();
+  if (!key) {
+    showToast('请输入同步密钥');
+    return;
+  }
+  state.syncKey = key;
+  
+  const btn = document.getElementById('syncUploadBtn');
+  btn.textContent = '⏳ 上传中...';
+  btn.disabled = true;
+  
+  const result = await uploadToCloud();
+  btn.textContent = '📤 上传到云端';
+  btn.disabled = false;
+  
+  if (result.success) {
+    state.syncEnabled = true;
+    document.getElementById('autoSyncToggle').checked = true;
+    saveData();
+    updateSyncStatus();
+    showToast('上传成功 ✅');
+  } else {
+    showToast('上传失败: ' + (result.error || '未知错误'));
+  }
+}
+
+async function doSyncDownload() {
+  const key = document.getElementById('syncKeyInput').value.trim();
+  if (!key) {
+    showToast('请输入同步密钥');
+    return;
+  }
+  state.syncKey = key;
+  
+  const btn = document.getElementById('syncDownloadBtn');
+  btn.textContent = '⏳ 下载中...';
+  btn.disabled = true;
+  
+  const result = await downloadFromCloud();
+  btn.textContent = '📥 从云端下载';
+  btn.disabled = false;
+  
+  if (result.success) {
+    document.getElementById('autoSyncToggle').checked = true;
+    saveData();
+    updateSyncStatus();
+    renderAll();
+    applyAppIcon();
+    document.getElementById('appTitle').textContent = state.appTitle;
+    document.title = state.appTitle;
+    showToast('下载同步成功 ✅');
+  } else {
+    showToast('下载失败: ' + (result.error || '未知错误'));
+  }
+}
+
+function copyBinId() {
+  const binId = localStorage.getItem(SYNC_BIN_ID_KEY);
+  if (!binId) {
+    showToast('请先上传一次数据');
+    return;
+  }
+  navigator.clipboard.writeText(binId).then(() => {
+    showToast('云端 ID 已复制 📋');
+  }).catch(() => {
+    // fallback: 显示出来
+    prompt('请手动复制云端 ID：', binId);
+  });
+}
+
+function setBinId() {
+  const binId = document.getElementById('syncBinIdInput').value.trim();
+  if (!binId) {
+    showToast('请输入云端 ID');
+    return;
+  }
+  localStorage.setItem(SYNC_BIN_ID_KEY, binId);
+  showToast('云端 ID 已设置 ✅ 现在可以下载同步了');
+  updateSyncStatus();
+}
+
+// ========== 导出/导入 ==========
+function exportAllData() {
+  const data = {
+    recipes: state.recipes,
+    customCategories: state.customCategories,
+    customTags: state.customTags,
+    shoppingItems: state.shoppingItems,
+    inventoryItems: state.inventoryItems,
+    appIcon: state.appIcon,
+    appTitle: state.appTitle,
+    exportedAt: new Date().toLocaleString('zh-CN')
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = '烘焙工作台_备份_' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('数据已导出 ✅ 通过微信或AirDrop发给另一设备');
+}
+
+function importAllData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.recipes) {
+        showToast('文件格式不正确');
+        return;
+      }
+      // 合并数据
+      if (data.recipes) state.recipes = data.recipes;
+      if (data.customCategories) state.customCategories = data.customCategories;
+      if (data.customTags) state.customTags = data.customTags;
+      if (data.shoppingItems) state.shoppingItems = data.shoppingItems;
+      if (data.inventoryItems) state.inventoryItems = data.inventoryItems;
+      if (data.appIcon) state.appIcon = data.appIcon;
+      if (data.appTitle) state.appTitle = data.appTitle;
+      saveData();
+      renderAll();
+      applyAppIcon();
+      document.getElementById('appTitle').textContent = state.appTitle;
+      document.title = state.appTitle;
+      showToast('导入成功 ✅ 数据已更新');
+    } catch(err) {
+      showToast('导入失败：文件格式错误');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function renderFavoritesPanel() {
+  const favs = state.recipes.filter(r => r.favorite);
+  document.getElementById('favoritesContent').innerHTML = favs.length === 0
+    ? '<p style="text-align:center;color:var(--text-muted);padding:40px;">还没有收藏配方哦～</p>'
+    : favs.map(r => `
+      <div style="padding:10px;margin-bottom:6px;background:var(--bg);border-radius:10px;cursor:pointer;"
+           onclick="setCategory('${r.category}');togglePanel('favorites');document.getElementById('favoritesPanel').classList.remove('open');">
+        <strong>${r.name}</strong>
+        <span style="float:right;color:var(--text-muted);font-size:11px;">${r.category}</span>
+      </div>
+    `).join('');
+}
+
+function renderShoppingList() {
+  document.getElementById('shoppingList').innerHTML = state.shoppingItems.map((item, idx) => `
+    <div class="shopping-item">
+      <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleShoppingItem(${idx})">
+      <span class="item-name" style="${item.checked ? 'text-decoration:line-through;color:var(--text-muted)' : ''}">${item.name}</span>
+      <span class="item-qty">${item.quantity}${item.unit}</span>
+      <button style="border:none;background:none;cursor:pointer;color:var(--danger);font-size:12px;"
+              onclick="removeShoppingItem(${idx})">✕</button>
+    </div>
+  `).join('') || '<p style="text-align:center;color:var(--text-muted);padding:20px;">采购清单为空</p>';
+}
+
+function addShoppingItem() {
+  const input = document.getElementById('newShoppingItem');
+  const name = input.value.trim();
+  if (name) {
+    state.shoppingItems.push({ name, quantity: 1, unit: '份', checked: false });
+    input.value = '';
+    renderShoppingList();
+    saveData();
+  }
+}
+
+function toggleShoppingItem(idx) {
+  state.shoppingItems[idx].checked = !state.shoppingItems[idx].checked;
+  renderShoppingList();
+  saveData();
+}
+
+function removeShoppingItem(idx) {
+  state.shoppingItems.splice(idx, 1);
+  renderShoppingList();
+  saveData();
+}
+
+function renderInventoryTable() {
+  document.getElementById('inventoryTableBody').innerHTML = state.inventoryItems.map((item, idx) => `
+    <tr>
+      <td>${item.name}</td>
+      <td class="${item.quantity <= (item.lowStock || 0) ? 'low-stock' : ''}">
+        <input type="number" value="${item.quantity}" onchange="updateInventoryQty(${idx}, this.value)" style="width:60px;">
+      </td>
+      <td>${item.unit}</td>
+      <td><button style="border:none;background:none;cursor:pointer;color:var(--danger);"
+                  onclick="removeInventoryItem(${idx})">🗑</button></td>
+    </tr>
+  `).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px;">库存为空</td></tr>';
+}
+
+function addInventoryItem() {
+  const name = document.getElementById('newInvName').value.trim();
+  const qty = parseFloat(document.getElementById('newInvQty').value) || 0;
+  const unit = document.getElementById('newInvUnit').value.trim() || 'g';
+  if (name) {
+    state.inventoryItems.push({ name, quantity: qty, unit, lowStock: 0 });
+    document.getElementById('newInvName').value = '';
+    document.getElementById('newInvQty').value = '';
+    document.getElementById('newInvUnit').value = '';
+    renderInventoryTable();
+    saveData();
+  }
+}
+
+function updateInventoryQty(idx, value) {
+  state.inventoryItems[idx].quantity = parseFloat(value) || 0;
+  saveData();
+  renderInventoryTable();
+}
+
+function removeInventoryItem(idx) {
+  state.inventoryItems.splice(idx, 1);
+  renderInventoryTable();
+  saveData();
+}
+
+// ========== 计时器 ==========
+function openTimer() {
+  document.getElementById('timerModal').style.display = 'flex';
+  updateTimerDisplay();
+}
+
+function closeTimer() {
+  document.getElementById('timerModal').style.display = 'none';
+  if (state.timerRunning) pauseTimer();
+}
+
+function updateTimerDisplay() {
+  const mins = Math.floor(state.timerSeconds / 60);
+  const secs = state.timerSeconds % 60;
+  document.getElementById('timerDisplay').textContent =
+    `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
+
+function setTimerPreset(minutes) {
+  state.timerSeconds = minutes * 60;
+  updateTimerDisplay();
+  if (state.timerRunning) { pauseTimer(); }
+}
+
+// ========== 闹钟铃声 ==========
+let alarmAudioContext = null;
+let alarmOscillator = null;
+let alarmGainNode = null;
+let alarmIntervalId = null;
+
+function playAlarmSound() {
+  try {
+    // 停止之前的铃声
+    stopAlarmSound();
+
+    // 创建 AudioContext（首次需要用户交互）
+    if (!alarmAudioContext) {
+      alarmAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    // iOS 锁定状态需要 resume
+    if (alarmAudioContext.state === 'suspended') {
+      alarmAudioContext.resume();
+    }
+
+    // 创建振荡器（清脆铃声：高频双频）
+    alarmOscillator = alarmAudioContext.createOscillator();
+    alarmGainNode = alarmAudioContext.createGain();
+
+    // 用两个频率叠加产生铃声效果
+    alarmOscillator.type = 'sine';
+    alarmOscillator.frequency.setValueAtTime(880, alarmAudioContext.currentTime); // A5
+    alarmOscillator.frequency.setValueAtTime(0, alarmAudioContext.currentTime + 0.15);
+    alarmOscillator.frequency.setValueAtTime(1100, alarmAudioContext.currentTime + 0.2); // C#6
+    alarmOscillator.frequency.setValueAtTime(0, alarmAudioContext.currentTime + 0.35);
+    alarmOscillator.frequency.setValueAtTime(880, alarmAudioContext.currentTime + 0.4);
+    alarmOscillator.frequency.setValueAtTime(0, alarmAudioContext.currentTime + 0.55);
+
+    // 音量
+    alarmGainNode.gain.setValueAtTime(0.3, alarmAudioContext.currentTime);
+    alarmGainNode.gain.setValueAtTime(0.3, alarmAudioContext.currentTime + 0.15);
+    alarmGainNode.gain.setValueAtTime(0, alarmAudioContext.currentTime + 0.55);
+
+    alarmOscillator.connect(alarmGainNode);
+    alarmGainNode.connect(alarmAudioContext.destination);
+    alarmOscillator.start();
+    alarmOscillator.stop(alarmAudioContext.currentTime + 0.6);
+
+    // 循环播放（每 1 秒响一次，共响 10 次）
+    let count = 0;
+    alarmIntervalId = setInterval(() => {
+      count++;
+      if (count >= 10) {
+        stopAlarmSound();
+        return;
+      }
+      const osc = alarmAudioContext.createOscillator();
+      const gain = alarmAudioContext.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, alarmAudioContext.currentTime);
+      osc.frequency.setValueAtTime(0, alarmAudioContext.currentTime + 0.15);
+      osc.frequency.setValueAtTime(1100, alarmAudioContext.currentTime + 0.2);
+      osc.frequency.setValueAtTime(0, alarmAudioContext.currentTime + 0.35);
+      osc.frequency.setValueAtTime(880, alarmAudioContext.currentTime + 0.4);
+      osc.frequency.setValueAtTime(0, alarmAudioContext.currentTime + 0.55);
+      gain.gain.setValueAtTime(0.3, alarmAudioContext.currentTime);
+      gain.gain.setValueAtTime(0.3, alarmAudioContext.currentTime + 0.15);
+      gain.gain.setValueAtTime(0, alarmAudioContext.currentTime + 0.55);
+      osc.connect(gain);
+      gain.connect(alarmAudioContext.destination);
+      osc.start();
+      osc.stop(alarmAudioContext.currentTime + 0.6);
+    }, 1000);
+  } catch (e) {
+    console.warn('闹钟播放失败:', e);
+  }
+}
+
+function stopAlarmSound() {
+  if (alarmIntervalId) {
+    clearInterval(alarmIntervalId);
+    alarmIntervalId = null;
+  }
+  if (alarmOscillator) {
+    try { alarmOscillator.stop(); } catch(e) {}
+    alarmOscillator = null;
+  }
+}
+
+function startTimer() {
+  if (!state.timerRunning && state.timerSeconds === 0) {
+    const customMin = parseInt(document.getElementById('customTimerMinutes').value);
+    if (customMin > 0) {
+      state.timerSeconds = customMin * 60;
+    } else {
+      showToast('请设置计时时间');
+      return;
+    }
+  }
+  if (state.timerSeconds <= 0) return;
+  if (state.timerRunning) return;
+
+  // iOS PWA 必须先解锁音频（用户交互内调用）
+  if (!alarmAudioContext) {
+    try {
+      alarmAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+    } catch(e) {}
+  }
+  if (alarmAudioContext && alarmAudioContext.state === 'suspended') {
+    alarmAudioContext.resume();
+  }
+
+  state.timerRunning = true;
+  document.getElementById('timerStartBtn').textContent = '⏳ 计时中...';
+  state.timerInterval = setInterval(() => {
+    state.timerSeconds--;
+    updateTimerDisplay();
+    if (state.timerSeconds <= 0) {
+      clearInterval(state.timerInterval);
+      state.timerRunning = false;
+      document.getElementById('timerStartBtn').textContent = '▶ 开始';
+      // 播放铃声
+      playAlarmSound();
+      // 震动
+      if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 500]);
+      // 弹窗提醒
+      showToast('⏰ 计时结束！');
+      // 系统通知
+      if (Notification.permission === 'granted') {
+        const n = new Notification('烘焙计时器', { body: '⏰ 计时结束！', icon: 'icon-192.png', tag: 'baking-timer', requireInteraction: true });
+        n.onclick = () => { stopAlarmSound(); window.focus(); };
+      }
+    }
+  }, 1000);
+
+  if (Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+}
+
+function pauseTimer() {
+  if (state.timerInterval) {
+    clearInterval(state.timerInterval);
+    state.timerInterval = null;
+  }
+  state.timerRunning = false;
+  document.getElementById('timerStartBtn').textContent = '▶ 开始';
+  // 停止铃声
+  stopAlarmSound();
+}
+
+function resetTimer() {
+  pauseTimer();
+  state.timerSeconds = 0;
+  updateTimerDisplay();
+}
+
+// ========== 数据备份 ==========
+function exportBackup() {
+  const data = {
+    recipes: state.recipes,
+    customCategories: state.customCategories,
+    customTags: state.customTags,
+    shoppingItems: state.shoppingItems,
+    inventoryItems: state.inventoryItems,
+    fontLevel: state.fontLevel,
+    theme: state.theme,
+    exportDate: new Date().toISOString()
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `烘焙工作台_备份_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('数据备份已下载 💾');
+}
+
+// ========== 主题切换 ==========
+function toggleTheme() {
+  state.theme = state.theme === 'light' ? 'dark' : 'light';
+  applyTheme();
+  updateThemeIcon();
+  saveData();
+}
+
+function applyTheme() {
+  document.documentElement.setAttribute('data-theme', state.theme);
+}
+
+function updateThemeIcon() {
+  document.getElementById('themeToggle').textContent = state.theme === 'dark' ? '☀️' : '🌙';
+}
+
+// ========== 字体大小 ==========
+function changeFontSize(delta) {
+  state.fontLevel = Math.max(0, Math.min(2, state.fontLevel + delta));
+  applyFontSize();
+  saveData();
+}
+
+function applyFontSize() {
+  const classes = ['font-sm', 'font-md', 'font-lg'];
+  document.getElementById('app').classList.remove(...classes);
+  document.getElementById('app').classList.add(classes[state.fontLevel]);
+}
+
+// ========== 图标选择器 ==========
+function editAppTitle() {
+  const titleEl = document.getElementById('appTitle');
+  const current = titleEl.textContent;
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.value = current;
+  input.style.cssText = 'font-size:16px;font-weight:700;color:var(--text);border:none;border-bottom:2px solid var(--primary);background:transparent;outline:none;width:120px;padding:2px 4px;font-family:inherit;text-align:center;';
+  titleEl.innerHTML = '';
+  titleEl.appendChild(input);
+  input.focus();
+  input.select();
+  const save = () => {
+    const val = input.value.trim() || '烘焙工作台';
+    titleEl.textContent = val;
+    state.appTitle = val;
+    document.title = val;
+    document.querySelector('meta[name="apple-mobile-web-app-title"]')?.setAttribute('content', val);
+    saveData();
+  };
+  input.addEventListener('blur', save);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') { input.blur(); } });
+}
+
+function applyAppIcon() {
+  const logoEl = document.getElementById('logoIcon');
+  if (!logoEl) return;
+  const icon = APP_ICONS.find(i => i.id === state.appIcon);
+  if (!icon) return;
+  
+  // 强制清空再设置，确保 DOM 更新
+  logoEl.innerHTML = '';
+  
+  if (icon.src) {
+    // 使用图片（如 baker-girl 或自定义照片）
+    const img = document.createElement('img');
+    img.src = icon.src;
+    img.className = 'logo-icon-img';
+    img.alt = 'logo';
+    logoEl.appendChild(img);
+    logoEl.style.background = 'transparent';
+    logoEl.style.boxShadow = 'none';
+  } else if (icon.emoji) {
+    // 使用 emoji，保持圆角渐变背景
+    logoEl.textContent = icon.emoji;
+    logoEl.style.background = 'linear-gradient(135deg, var(--primary), #A07818)';
+    logoEl.style.boxShadow = '0 2px 6px rgba(139, 105, 20, 0.2)';
+  }
+  
+  // 同步更新 manifest 和 meta 标签图标
+  updatePwaIcon(icon);
+}
+
+function updatePwaIcon(icon) {
+  // 确定图标文件的前缀
+  let iconPrefix = 'icon';
+  if (icon.id === 'baker-girl') {
+    iconPrefix = 'icon';
+  } else if (icon.id.startsWith('custom_')) {
+    // 自定义图片：直接用 data URL（仅更新 link 标签，不动 manifest）
+    updateAppleTouchIcon(icon.src);
+    return;
+  } else {
+    iconPrefix = `icon-${icon.id}`;
+  }
+
+  const icon180 = `${iconPrefix}-180.png`;
+  const icon192 = `${iconPrefix}-192.png`;
+  const icon512 = `${iconPrefix}-512.png`;
+
+  // 更新 apple-touch-icon（iOS 主屏幕图标关键）
+  updateAppleTouchIcon(icon180);
+
+  // 更新 favicon
+  const favicons = document.querySelectorAll('link[rel="icon"]');
+  favicons.forEach(el => {
+    if (el.getAttribute('sizes') === '192x192') el.setAttribute('href', icon192);
+    else if (el.getAttribute('sizes') === '512x512') el.setAttribute('href', icon512);
+    else el.setAttribute('href', icon192);
+  });
+
+  // 动态更新 manifest 的图标引用
+  const manifestLink = document.querySelector('link[rel="manifest"]');
+  if (manifestLink) {
+    // 用 Blob 生成动态 manifest
+    const manifest = {
+      name: state.appTitle || '烘焙工作台',
+      short_name: state.appTitle || '烘焙工作台',
+      start_url: './baking-workbench.html?v=2',
+      display: 'standalone',
+      background_color: '#FFF8F0',
+      theme_color: '#FFF8F0',
+      icons: [
+        { src: icon192, sizes: '192x192', type: 'image/png' },
+        { src: icon512, sizes: '512x512', type: 'image/png' },
+        { src: icon180, sizes: '180x180', type: 'image/png' }
+      ]
+    };
+    const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+    manifestLink.setAttribute('href', URL.createObjectURL(blob));
+  }
+}
+
+function updateAppleTouchIcon(url) {
+  const appleIcons = document.querySelectorAll('link[rel="apple-touch-icon"]');
+  if (appleIcons.length > 0) {
+    appleIcons.forEach(el => el.setAttribute('href', url));
+  } else {
+    // 如果不存在则创建
+    const link = document.createElement('link');
+    link.rel = 'apple-touch-icon';
+    link.href = url;
+    document.head.appendChild(link);
+  }
+}
+
+function openIconPicker() {
+  document.getElementById('iconPickerModal').style.display = 'flex';
+}
+
+function closeIconPicker() {
+  document.getElementById('iconPickerModal').style.display = 'none';
+}
+
+function selectAppIcon(id) {
+  state.appIcon = id;
+  closeIconPicker();
+  // 延迟执行确保弹窗已关闭
+  setTimeout(() => {
+    applyAppIcon();
+    saveData();
+  }, 50);
+  const icon = APP_ICONS.find(i => i.id === id);
+  showToast(`图标已更新 ✅ 请重新添加到主屏幕`);
+
+  // 弹出重新安装引导
+  setTimeout(() => {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    if (isIOS && navigator.standalone) {
+      showToast('已安装为 App，删除后重新添加即可看到新图标 📲');
+    } else if (isIOS) {
+      showReinstallTip();
+    }
+  }, 2500);
+}
+
+function showReinstallTip() {
+  const tip = document.createElement('div');
+  tip.style.cssText = `
+    position:fixed;bottom:120px;left:50%;transform:translateX(-50%);
+    background:#4A3728;color:#FFF8F0;padding:14px 22px;
+    border-radius:20px;font-size:13px;font-weight:600;z-index:9999;
+    box-shadow:0 4px 20px rgba(0,0,0,0.3);text-align:center;
+    animation:fadeIn 0.3s ease;max-width:90%;
+  `;
+  tip.innerHTML = '📲 图标已更换！<br>点击 <b>分享 → 添加到主屏幕</b><br>即可更新主屏幕图标';
+  document.body.appendChild(tip);
+  setTimeout(() => { tip.style.opacity = '0'; tip.style.transition = 'opacity 0.5s'; }, 5000);
+  setTimeout(() => tip.remove(), 5500);
+}
+
+// ========== 自定义图标上传 ==========
+function handleCustomIconUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) {
+    showToast('请选择图片文件 📷');
+    return;
+  }
+  // 限制文件大小 5MB
+  if (file.size > 5 * 1024 * 1024) {
+    showToast('图片不能超过 5MB');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const dataUrl = e.target.result;
+    // 创建一个唯一的自定义图标 ID
+    const customId = 'custom_' + Date.now();
+    // 检查是否已有自定义图标，如果有则替换
+    const existingCustom = APP_ICONS.findIndex(i => i.id.startsWith('custom_'));
+    if (existingCustom >= 0) {
+      APP_ICONS[existingCustom] = {
+        id: customId,
+        label: '自定义照片',
+        src: dataUrl,
+        emoji: null
+      };
+    } else {
+      APP_ICONS.push({
+        id: customId,
+        label: '自定义照片',
+        src: dataUrl,
+        emoji: null
+      });
+    }
+    state.appIcon = customId;
+    closeIconPicker();
+    setTimeout(() => {
+      applyAppIcon();
+      saveData();
+    }, 50);
+    showToast('照片已设置为图标 📷 请重新添加到主屏幕');
+  };
+  reader.readAsDataURL(file);
+  // 重置 input 以允许重复选择同一文件
+  event.target.value = '';
+}
+
+// ========== 辅助函数 ==========
+function showToast(msg) {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = msg;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 2200);
+}
+
+function addIngredientInput() {
+  const div = document.createElement('div');
+  div.className = 'ingredient-input-row';
+  div.innerHTML = `
+    <input type="text" placeholder="原料名称" class="ing-name">
+    <input type="text" placeholder="用量" class="ing-amount" style="width:80px;">
+    <input type="text" placeholder="单位" class="ing-unit" style="width:60px;">
+    <button class="btn-remove-ing" onclick="this.parentElement.remove()">✕</button>
+  `;
+  document.getElementById('ingredientInputs').appendChild(div);
+}
+
+// 点击模态框外部关闭
+document.getElementById('recipeModal').addEventListener('click', function(e) {
+  if (e.target === this) closeRecipeModal();
+});
+document.getElementById('timerModal').addEventListener('click', function(e) {
+  if (e.target === this) closeTimer();
+});
+document.getElementById('confirmModal').addEventListener('click', function(e) {
+  if (e.target === this) closeConfirm();
+});
+document.getElementById('iconPickerModal').addEventListener('click', function(e) {
+  if (e.target === this) closeIconPicker();
+});
+
+// 初始化
+init();
+
+// ========== 浮动计时器拖拽 ==========
+(function() {
+  const btn = document.getElementById('floatTimerBtn');
+  if (!btn) return;
+
+  let startX, startY, startLeft, startTop;
+  let isDragging = false;
+  let hasMoved = false;
+  const DRAG_THRESHOLD = 8;
+
+  function getPos(el) {
+    const rect = el.getBoundingClientRect();
+    return { left: rect.left, top: rect.top };
+  }
+
+  btn.addEventListener('touchstart', function(e) {
+    const touch = e.touches[0];
+    startX = touch.clientX;
+    startY = touch.clientY;
+    const pos = getPos(btn);
+    startLeft = pos.left;
+    startTop = pos.top;
+    hasMoved = false;
+  }, { passive: false });
+
+  btn.addEventListener('touchmove', function(e) {
+    const touch = e.touches[0];
+    const dx = touch.clientX - startX;
+    const dy = touch.clientY - startY;
+    if (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD) {
+      hasMoved = true;
+      e.preventDefault();
+      btn.classList.add('dragging');
+      const newLeft = startLeft + dx;
+      const newTop = startTop + dy;
+      const maxX = window.innerWidth - btn.offsetWidth - 8;
+      const maxY = window.innerHeight - btn.offsetHeight - 8;
+      btn.style.right = 'auto';
+      btn.style.bottom = 'auto';
+      btn.style.left = Math.max(8, Math.min(newLeft, maxX)) + 'px';
+      btn.style.top = Math.max(8, Math.min(newTop, maxY)) + 'px';
+    }
+  }, { passive: false });
+
+  btn.addEventListener('touchend', function(e) {
+    btn.classList.remove('dragging');
+    if (!hasMoved) {
+      openTimer();
+    }
+  });
+
+  // 也支持鼠标拖拽（桌面端调试）
+  btn.addEventListener('mousedown', function(e) {
+    e.preventDefault();
+    startX = e.clientX;
+    startY = e.clientY;
+    const pos = getPos(btn);
+    startLeft = pos.left;
+    startTop = pos.top;
+    hasMoved = false;
+    isDragging = true;
+
+    function onMove(ev) {
+      const dx = ev.clientX - startX;
+      const dy = ev.clientY - startY;
+      if (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD) {
+        hasMoved = true;
+        btn.classList.add('dragging');
+        const newLeft = startLeft + dx;
+        const newTop = startTop + dy;
+        const maxX = window.innerWidth - btn.offsetWidth - 8;
+        const maxY = window.innerHeight - btn.offsetHeight - 8;
+        btn.style.right = 'auto';
+        btn.style.bottom = 'auto';
+        btn.style.left = Math.max(8, Math.min(newLeft, maxX)) + 'px';
+        btn.style.top = Math.max(8, Math.min(newTop, maxY)) + 'px';
+      }
+    }
+    function onUp() {
+      btn.classList.remove('dragging');
+      isDragging = false;
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      if (!hasMoved) openTimer();
+    }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+})();
+
+// ========== iOS 添加到主屏幕提示 ==========
+(function() {
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isStandalone = navigator.standalone;
+  const hasShown = sessionStorage.getItem('pwa_tip_shown');
+  if (isIOS && !isStandalone && !hasShown) {
+    setTimeout(() => {
+      const tip = document.createElement('div');
+      tip.style.cssText = `
+        position:fixed;bottom:100px;left:50%;transform:translateX(-50%);
+        background:var(--text);color:var(--surface);padding:12px 20px;
+        border-radius:24px;font-size:13px;font-weight:600;z-index:9999;
+        box-shadow:0 4px 20px rgba(0,0,0,0.25);text-align:center;
+        animation:fadeIn 0.3s ease;max-width:90%;
+      `;
+      tip.innerHTML = '📲 点击下方 <b>分享</b> → <b>添加到主屏幕</b><br>即可像 App 一样使用烘焙工作台';
+      document.body.appendChild(tip);
+      setTimeout(() => { tip.style.opacity = '0'; tip.style.transition = 'opacity 0.5s'; }, 5000);
+      setTimeout(() => tip.remove(), 5500);
+      sessionStorage.setItem('pwa_tip_shown', '1');
+    }, 2000);
+  }
+})();
+</script>
+</body>
+</html>
