@@ -250,7 +250,7 @@ body {
 .top-nav {
   background: var(--surface);
   border-bottom: 1px solid var(--border-light);
-  padding: 8px 12px;
+  padding: max(8px, env(safe-area-inset-top)) 12px 8px;
   flex-shrink: 0;
   z-index: 100;
   box-shadow: var(--shadow-sm);
