@@ -1405,35 +1405,66 @@ body {
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow-md);
   border: 1px solid var(--border-light);
-  min-width: 120px;
+  min-width: 180px;
   z-index: 300;
   padding: 4px;
   animation: fadeIn 0.15s ease;
+  white-space: nowrap;
 }
 
-.dropdown-menu button {
-  display: block;
+.recipe-card-actions .dropdown-menu button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   width: 100%;
+  height: auto;
+  min-height: 36px;
+  max-height: none;
   text-align: left;
   padding: 8px 12px;
   border: none;
   background: transparent;
-  font-size: 12px;
+  font-size: 14px;
   color: var(--text-secondary);
   cursor: pointer;
   border-radius: 6px;
+  white-space: nowrap;
+  overflow: visible;
+  flex-shrink: 0;
 }
 
-.dropdown-menu button:hover {
+.dropdown-menu .menu-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 44px !important;
+  max-height: none !important;
+  text-align: left !important;
+  padding: 10px 14px !important;
+  border: none !important;
+  background: transparent !important;
+  font-size: 15px !important;
+  color: var(--text-secondary) !important;
+  cursor: pointer !important;
+  border-radius: 6px !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  flex-shrink: 0 !important;
+  line-height: 1.4 !important;
+}
+
+.dropdown-menu .menu-item:hover {
   background: var(--bg);
   color: var(--text);
 }
 
-.dropdown-menu button.danger {
+.dropdown-menu .menu-item.danger {
   color: var(--danger);
 }
 
-.dropdown-menu button.danger:hover {
+.dropdown-menu .menu-item.danger:hover {
   background: var(--danger-light);
 }
 
@@ -2814,12 +2845,19 @@ function toggleDropdown(event, id) {
   const menu = document.createElement('div');
   menu.className = 'dropdown-menu';
   menu.innerHTML = `
-    <button onclick="toggleFavorite(${id});document.querySelector('.dropdown-menu')?.remove()">⭐ 收藏/取消</button>
-    <button onclick="copyIngredients(${id});document.querySelector('.dropdown-menu')?.remove()">📋 复制配料</button>
-    <button onclick="addToShopping(${id});document.querySelector('.dropdown-menu')?.remove()">🛒 加入采购清单</button>
-    <button class="danger" onclick="confirmDelete(${id});document.querySelector('.dropdown-menu')?.remove()">🗑 删除</button>
+    <button class="menu-item" onclick="toggleFavorite(${id});document.querySelector('.dropdown-menu')?.remove()">⭐ 收藏/取消</button>
+    <button class="menu-item" onclick="copyIngredients(${id});document.querySelector('.dropdown-menu')?.remove()">📋 复制配料</button>
+    <button class="menu-item" onclick="addToShopping(${id});document.querySelector('.dropdown-menu')?.remove()">🛒 加入采购清单</button>
+    <button class="menu-item danger" onclick="confirmDelete(${id});document.querySelector('.dropdown-menu')?.remove()">🗑 删除</button>
   `;
-  event.target.closest('.recipe-card-actions').appendChild(menu);
+  document.body.appendChild(menu);
+  // 定位到按钮下方
+  const btnRect = event.target.getBoundingClientRect();
+  menu.style.position = 'fixed';
+  menu.style.top = (btnRect.bottom + 4) + 'px';
+  menu.style.right = (window.innerWidth - btnRect.right) + 'px';
+  menu.style.left = 'auto';
+  menu.style.zIndex = '10000';
 
   // 点击其他地方关闭
   setTimeout(() => {
